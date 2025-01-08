@@ -122,7 +122,6 @@ class MailSlashCommands : PostmanCommandProvider {
 
         private fun mailSendCommand(event: SlashCommandEvent) {
             val user = event.userOrPlayer() ?: run {
-                event.replyEphemeral("Could not find user!").queue()
                 return
             }
             val senderUser = event.user
