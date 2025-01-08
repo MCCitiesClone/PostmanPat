@@ -1,9 +1,7 @@
 package me.zodd.postmanpat.econ.entity
 
 import com.earth2me.essentials.User
-import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
-import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.econ.PPEconomyTransactionResult
 import org.bukkit.OfflinePlayer
 import java.util.UUID
@@ -35,10 +33,10 @@ class UserEntity(user: User) : EconEntity {
         return PPEconomyTransactionResult.SUCCESS
     }
 
-    override fun pay(sender: UserEntity, econEntity: EconEntity, amount: Double): PPEconomyTransactionResult {
-        val res = econEntity.withdraw(amount)
+    override fun pay(sender: UserEntity, receiver: EconEntity, amount: Double): PPEconomyTransactionResult {
+        val res = withdraw(amount)
         takeIf { res.isSuccess() } ?: return res // Return error
-        return deposit(amount)
+        return receiver.deposit(amount)
     }
 }
 

@@ -10,6 +10,7 @@ import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.EssxUtils.manager
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import net.essentialsx.api.v2.services.mail.MailMessage
@@ -120,28 +121,26 @@ class MailSlashCommands : PostmanCommandProvider {
         }
 
         private fun mailSendCommand(event: SlashCommandEvent) {
-            val user = event.getOption("user")?.asUser ?: run {
+            val user = event.userOrPlayer() ?: run {
                 event.replyEphemeral("Could not find user!").queue()
                 return
             }
             val senderUser = event.user
 
             val senderUUID = manager().getUuid(senderUser.id)
-            val uuid = manager().getUuid(user.id)
 
-            if (senderUUID == null || uuid == null) {
+            if (senderUUID == null) {
                 event.replyEphemeral("One or more users do not have a linked account!").queue()
                 return
             }
 
-            val essxUser = plugin.ess?.getUser(uuid)
             val senderEssxUser = plugin.ess?.getUser(senderUUID)
 
             val message = event.getOption("message")?.asString
 
-            essxUser?.sendMail(senderEssxUser, message)
+            user.sendMail(senderEssxUser, message)
 
-            event.replyEphemeral("Sent mail to " + user.asTag).queue()
+            event.replyEphemeral("Sent mail to " + user.displayName).queue()
         }
 
         /**
@@ -184,8 +183,10 @@ class MailSlashCommands : PostmanCommandProvider {
                             ),
 
                         SubcommandData(MailCommands.MAIL_SEND.command, "send mail")
-                            .addOption(OptionType.USER, "user", "user to send mail to.", true)
-                            .addOption(OptionType.STRING, "message", "message to send to the user", true),
+                            .addOption(OptionType.STRING, "message", "message to send to the user", true)
+                            .addOption(OptionType.USER, "user", "user to send mail to.", false)
+                            .addOption(OptionType.STRING, "player", "player to send mail to.", false),
+
 
                         SubcommandData(MailCommands.MAIL_MARK_READ.command, "Marks all mail as having been read."),
 

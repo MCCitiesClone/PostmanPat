@@ -1,21 +1,37 @@
 package me.zodd.postmanpat.mail
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import github.scarsz.discordsrv.dependencies.jda.api.entities.PrivateChannel
 import me.zodd.postmanpat.PostmanPat
+import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.EssxUtils.manager
 import net.essentialsx.api.v2.events.UserMailEvent
 import org.bukkit.event.Event
 import org.bukkit.event.Listener
 import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.TimeUnit
 
 class MailListeners(private var plugin: PostmanPat) {
+
+    companion object {
+        /*
+         * Holds a cache of UUIDs for the purpose of tracking users
+         * who have already received a notification.
+         * Cache is meant to expire after cooldown period after which
+         * the user will be notified again.
+         */
+        val notificationCache: Cache<UUID, String> = CacheBuilder.newBuilder()
+            .expireAfterWrite(plugin.configManager.conf.moduleConfig.mail.notificationCooldown, TimeUnit.MINUTES)
+            .build()
+    }
 
     fun userMailListener(exec: Listener?, e: Event) {
         val event = e as UserMailEvent
 
         val msg = event.message
-        msg.senderUsername
         val senderUUID = msg.senderUUID
         val senderUser = getEssxUser(senderUUID)
 
@@ -34,8 +50,7 @@ class MailListeners(private var plugin: PostmanPat) {
         }
 
         val ignores = plugin.userStorageManager.conf.mailIgnoreList.getOrDefault(recipient.uuid, ArrayList())
-
-        if (senderUser != null && (getEssxUser(user.id)?.isIgnoredPlayer(senderUser) == true)
+        if (senderUser?.let { sender -> getEssxUser(user.id)?.isIgnoredPlayer(sender) } == true
             || (ignores.isNotEmpty() && ignores.contains(senderUUID))
         ) {
             // Don't send a message if ignoring player
@@ -55,6 +70,12 @@ class MailListeners(private var plugin: PostmanPat) {
                 c.sendMessage(m).queue(
                     { }
                 ) OnFail@{
+                    // If uuid is in cache, don't send another notification
+                    notificationCache.getIfPresent(recipient.uuid)?.let {
+                        plugin.logger.info("Name was in list")
+                        return@OnFail
+                    }
+
                     // If we're unable to send a DM to the user
                     val channelID = plugin.configManager.conf.moduleConfig.mail.notificationChannel
                     val channel =
@@ -63,6 +84,7 @@ class MailListeners(private var plugin: PostmanPat) {
                         plugin.logger.warning("Unable to find configured discord channel! $channelID")
                         return@OnFail
                     }
+                    notificationCache.put(recipient.uuid, "")
                     channel.sendMessage(user.asMention + " You have received mail! Check it with `/mail read`!")
                         .queue()
                 }

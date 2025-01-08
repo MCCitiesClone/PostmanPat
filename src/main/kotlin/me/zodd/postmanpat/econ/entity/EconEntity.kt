@@ -38,11 +38,11 @@ interface EconEntity {
     fun withdraw(amount: Double): PPEconomyTransactionResult
 
     /**
-     * @param econEntity the UserEntity that initiated the transaction
-     * @param econEntity the EconEntity being sent money
+     * @param receiver the UserEntity that initiated the transaction
+     * @param receiver the EconEntity being sent money
      * @param amount the amount to deposit into Entities account
      */
-    fun pay(sender: UserEntity, econEntity: EconEntity, amount: Double): PPEconomyTransactionResult
+    fun pay(sender: UserEntity, receiver: EconEntity, amount: Double): PPEconomyTransactionResult
 
     /**
      * @param amount the amount to check against Entities balance

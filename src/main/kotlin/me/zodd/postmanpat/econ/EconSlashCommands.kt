@@ -2,12 +2,9 @@ package me.zodd.postmanpat.econ
 
 import github.scarsz.discordsrv.api.commands.PluginSlashCommand
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
-import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.Command
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.OptionType
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.CommandData
-import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.OptionData
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
-import me.zodd.postmanpat.PostmanPat
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
@@ -18,6 +15,7 @@ import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import me.zodd.postmanpat.econ.EconSlashCommands.EconCommands.Companion.pba
+import me.zodd.postmanpat.econ.entity.BusinessEntity
 import me.zodd.postmanpat.econ.entity.UserEntity
 
 
@@ -34,9 +32,7 @@ class EconSlashCommands : PostmanCommandProvider {
 
         companion object {
             internal val pba: PlayerBusinessAddon? by lazy {
-                if (plugin.server.pluginManager.getPlugin("DemocracyBusiness")?.isEnabled == true) {
-                    PlayerBusinessAddon()
-                } else null
+                return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("democracybusiness") }?.let { PlayerBusinessAddon() }
             }
         }
 
@@ -50,11 +46,11 @@ class EconSlashCommands : PostmanCommandProvider {
                 }
 
                 ECON_FIRM_LIST -> { s ->
-                    pba?.listOwnedBusinesses(s) ?: s.replyEphemeral("Error Not loaded").queue()
+                    pba?.listOwnedBusinesses(s) ?: s.replyEphemeral("Error, Not loaded").queue()
                 }
 
                 ECON_FIRM_BALANCE -> { s ->
-                    pba?.firmBal(s) ?: s.replyEphemeral("Error Not loaded").queue()
+                    pba?.firmBal(s) ?: s.replyEphemeral("Error, Not loaded").queue()
                 }
             }
         }
@@ -65,16 +61,23 @@ class EconSlashCommands : PostmanCommandProvider {
 
         private fun payUserCommand(event: SlashCommandEvent) {
             val senderUser = getEssxUser(event) ?: run {
-                event.replyEphemeral("Unable to find User, account may not be linked!").queue()
+                event.replyEphemeral("Unable to find target by that name!").queue()
                 return
             }
 
-            val targetUser = event.userOrPlayer() ?: return
+            val targetEntity = pba?.let { api ->
+                event["business"]?.let { option ->
+                    option.asString.let { name ->
+                        api.businessByName(name)?.let {
+                            BusinessEntity(it)
+                        }
+                    }
+                }
+            } ?: event.userOrPlayer()?.let { UserEntity(it) } ?: return
 
             val sender = UserEntity(senderUser)
-            val receiver = UserEntity(targetUser)
-            PostmanEconManager(sender, event).transferFunds(receiver)
-        }
+            PostmanEconManager(sender, event).transferFunds(targetEntity)
+        }   
 
         private fun balanceUserCommand(event: SlashCommandEvent) {
             val senderUser = getEssxUser(event) ?: return
@@ -93,17 +96,23 @@ class EconSlashCommands : PostmanCommandProvider {
     }
 
     override fun slashCommands(): List<PluginSlashCommand> {
+
+        // This is offered an optional argument from PlayerBusinesses
+        val payCommand = CommandData(EconCommands.ECON_PAY.command, "Pay's the target user a specified amount").apply {
+            addOption(OptionType.NUMBER, "amount", "amount to pay user", true)
+            addOption(OptionType.USER, "user", "user to pay by @tag", false)
+            addOption(OptionType.STRING, "player", "player to pay by username", false)
+        }
+
+
         val commands = mutableListOf(
             PluginSlashCommand(
-                plugin, CommandData(EconCommands.ECON_PAY.command, "Pay's the target user a specified amount")
-                    .addOption(OptionType.NUMBER, "amount", "amount to pay user", true)
-                    .addOption(OptionType.USER, "user", "user to pay by @tag", false)
-                    .addOption(OptionType.STRING, "player", "player to pay by username", false)
-            ),
-            PluginSlashCommand(
-                plugin, CommandData(EconCommands.ECON_BALANCE.command, "Checks the balance of the target or sender")
-                    .addOption(OptionType.USER, "user", "user to check balance of", false)
-                    .addOption(OptionType.STRING, "player", "player to check balance of", false)
+                plugin,
+                CommandData(EconCommands.ECON_BALANCE.command, "Checks the balance of the target or sender").apply {
+                    addOption(OptionType.USER, "user", "user to check balance of", false)
+                    addOption(OptionType.STRING, "player", "player to check balance of", false)
+                }
+
             )
         )
         // Add command if PlayerBusinesses is enabled
@@ -126,10 +135,16 @@ class EconSlashCommands : PostmanCommandProvider {
                                 "Lists businesses you have financial access to"
                             )
                         )
-
                 )
             )
-        }
+            // Add business option, or if null just the regular command
+            commands.add(
+                PluginSlashCommand(
+                    plugin,
+                    payCommand.addOption(OptionType.STRING, "business", "business to pay", false)
+                )
+            )
+        } ?: commands.add(PluginSlashCommand(plugin, payCommand))
 
         return commands
     }

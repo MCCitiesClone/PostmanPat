@@ -28,6 +28,7 @@ dependencies {
     compileOnly("org.spongepowered:configurate-hocon:4.1.2")
     compileOnly("org.spongepowered:configurate-extra-kotlin:4.1.2")
     compileOnly("com.olziedev:playerbusinesses-api:1.5.1")
+    compileOnly("com.google.guava:guava:21.0-jre")
 }
 
 val targetJavaVersion = 21

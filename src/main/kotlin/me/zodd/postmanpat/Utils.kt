@@ -10,7 +10,7 @@ import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import java.awt.Color
-import java.util.*
+import java.util.UUID
 
 object Utils {
 
@@ -89,8 +89,5 @@ object Utils {
                     return null
                 }
         }
-
     }
-
-
 }

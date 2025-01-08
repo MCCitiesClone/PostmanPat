@@ -22,10 +22,10 @@ class BusinessEntity(private val business: Business) : EconEntity {
         return PPEconomyTransactionResult.SUCCESS
     }
 
-    override fun pay(sender: UserEntity, econEntity: EconEntity, amount: Double): PPEconomyTransactionResult {
-        econEntity.withdraw(amount)
-        business.transactions.addPaidEntry(sender.uuid, econEntity.uuid, amount, Instant.now().toEpochMilli())
-        return deposit(amount)
+    override fun pay(sender: UserEntity, receiver: EconEntity, amount: Double): PPEconomyTransactionResult {
+        this.withdraw(amount)
+        business.transactions.addPaidEntry(sender.uuid, receiver.uuid, amount, Instant.now().toEpochMilli())
+        return receiver.deposit(amount)
     }
 
     override fun withdraw(amount: Double): PPEconomyTransactionResult {

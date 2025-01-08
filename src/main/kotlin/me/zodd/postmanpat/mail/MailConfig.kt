@@ -25,4 +25,9 @@ data class MailConfig(
         It is suggested you do not raise this value above 1900, lest ye risk errors"""
     )
     val maxMessageSize: Int = 1900,
+    @field:Comment(
+        """The time in minutes before another notification will be sent to the specified channel
+        This is per-user, not a global-cooldown."""
+    )
+    val notificationCooldown : Long = 30L
 )
