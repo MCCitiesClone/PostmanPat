@@ -11,6 +11,7 @@ import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeralEmbed
 import me.zodd.postmanpat.Utils.SlashCommandUtils.get
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrNull
 import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
@@ -73,11 +74,15 @@ class EconSlashCommands : PostmanCommandProvider {
                         }
                     }
                 }
-            } ?: event.userOrPlayer()?.let { UserEntity(it) } ?: return
+            } ?: event.userOrNull()?.let { UserEntity(it) } ?: run {
+                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them")
+                    .queue()
+                return
+            }
 
             val sender = UserEntity(senderUser)
             PostmanEconManager(sender, event).transferFunds(targetEntity)
-        }   
+        }
 
         private fun balanceUserCommand(event: SlashCommandEvent) {
             val senderUser = getEssxUser(event) ?: return

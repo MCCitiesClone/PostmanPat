@@ -79,8 +79,12 @@ object Utils {
             return getOption(option)
         }
 
-        fun SlashCommandEvent.userOrPlayer(userArg: String = "user", playerArg: String = "player"): User? {
+        fun SlashCommandEvent.userOrNull(userArg: String = "user"): User? {
             return this[userArg]?.asUser?.id?.let { getEssxUser(it) }
+        }
+
+        fun SlashCommandEvent.userOrPlayer(userArg: String = "user", playerArg: String = "player"): User? {
+            return userOrNull(userArg)
                 ?: this[playerArg]?.asString?.let { plugin.server.getOfflinePlayer(it) }
                     ?.let { getEssxUser(it.uniqueId) }
                 ?: run {
