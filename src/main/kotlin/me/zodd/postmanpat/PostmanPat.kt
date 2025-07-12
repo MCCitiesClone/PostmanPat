@@ -16,6 +16,8 @@ import me.zodd.postmanpat.mail.MailListeners
 import me.zodd.postmanpat.mail.MailSlashCommands
 import me.zodd.postmanpat.mail.MailSlashCommands.MailCommands.*
 import me.zodd.postmanpat.mail.MailUserStorage
+import me.zodd.postmanpat.realty.RealtySlashCommands
+import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.*
 import net.essentialsx.api.v2.events.UserMailEvent
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
@@ -85,6 +87,13 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
+            REALTY_BASE.command -> when (event.subcommandName) {
+                OWNER_TRANSFER.command -> OWNER_TRANSFER
+                RENTAL_TRANSFER.command -> RENTAL_TRANSFER
+                PLOT_INFO.command -> PLOT_INFO
+                else -> null
+            }
+
             else -> null
         }?.exec()?.invoke(event)
     }
@@ -98,6 +107,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
             mutableListOf<PluginSlashCommand>().apply {
                 addAll(EconSlashCommands().slashCommands())
                 addAll(MailSlashCommands().slashCommands())
+                addAll(RealtySlashCommands().slashCommands())
             }
         )
     }

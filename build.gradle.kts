@@ -10,25 +10,39 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven(url = "https://oss.sonatype.org/content/groups/public/")
-    maven (url = "https://repo.essentialsx.net/releases/")
+    maven(url = "https://repo.essentialsx.net/releases/")
     // DiscordSRV
-    maven (url = "https://nexus.scarsz.me/content/repositories/public/")
+    maven(url = "https://nexus.scarsz.me/content/repositories/public/")
     // VaultAPI
-    maven (url = "https://jitpack.io")
+    maven(url = "https://jitpack.io")
     // DemocracyBusiness
     maven(url = "https://repo.olziedev.com/")
+    maven(url = "https://maven.enginehub.org/repo/")
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21-R0.1-SNAPSHOT")
-    compileOnly("com.discordsrv:discordsrv:1.28.1")
+    compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
+    compileOnly("com.discordsrv:discordsrv:1.29.0")
     compileOnly("net.dv8tion:JDA:4.4.0_352.fix-2")
-    compileOnly("net.essentialsx:EssentialsX:2.20.1")
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7")
+    compileOnly("net.essentialsx:EssentialsX:2.21.0") {
+        isTransitive = false
+    }
+    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
+        isTransitive = false
+    }
     compileOnly("org.spongepowered:configurate-hocon:4.1.2")
     compileOnly("org.spongepowered:configurate-extra-kotlin:4.1.2")
-    compileOnly("com.olziedev:playerbusinesses-api:1.5.1")
-    compileOnly("com.google.guava:guava:21.0-jre")
+    compileOnly("com.olziedev:playerbusinesses-api:1.5.1") {
+        isTransitive = false
+    }
+    compileOnly("com.github.md5sha256.AreaShop:areashop:-SNAPSHOT") {
+        exclude("io.papermc")
+        exclude("io.github.baked-libs")
+        exclude("com.google.inject")
+        exclude("org.spigotmc")
+        exclude("com.sk89q.worldguard")
+        exclude("com.sk89q.worldedit")
+    }
 }
 
 val targetJavaVersion = 21
@@ -40,7 +54,7 @@ java {
 }
 
 tasks.runServer {
-    minecraftVersion("1.21")
+    minecraftVersion("1.21.4")
 }
 
 tasks.compileJava {
@@ -49,9 +63,4 @@ tasks.compileJava {
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible) {
         options.release.set(targetJavaVersion)
     }
-}
-
-
-kotlin {
-    jvmToolchain(21)
 }
