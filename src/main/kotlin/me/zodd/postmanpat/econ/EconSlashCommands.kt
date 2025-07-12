@@ -10,15 +10,15 @@ import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeralEmbed
+import me.zodd.postmanpat.Utils.SlashCommandUtils.commandNotLoaded
 import me.zodd.postmanpat.Utils.SlashCommandUtils.get
-import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrNull
 import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import me.zodd.postmanpat.econ.EconSlashCommands.EconCommands.Companion.pba
 import me.zodd.postmanpat.econ.entity.BusinessEntity
+import me.zodd.postmanpat.econ.entity.EconEntity
 import me.zodd.postmanpat.econ.entity.UserEntity
-
 
 class EconSlashCommands : PostmanCommandProvider {
 
@@ -42,16 +42,16 @@ class EconSlashCommands : PostmanCommandProvider {
                 ECON_PAY -> this::payUserCommand
                 ECON_BALANCE -> this::balanceUserCommand
                 ECON_FIRM_BASE -> { _ -> /*This command is never run*/ }
-                ECON_FIRM_PAY -> { s -> // Reply should never send in theory, as the command shouldn't be loaded
-                    pba?.firmPay(s) ?: s.replyEphemeral("Error Not loaded").queue()
+                ECON_FIRM_PAY -> { s ->
+                    pba?.firmPay(s) ?: s.commandNotLoaded()
                 }
 
                 ECON_FIRM_LIST -> { s ->
-                    pba?.listOwnedBusinesses(s) ?: s.replyEphemeral("Error, Not loaded").queue()
+                    pba?.listOwnedBusinesses(s) ?: s.commandNotLoaded()
                 }
 
                 ECON_FIRM_BALANCE -> { s ->
-                    pba?.firmBal(s) ?: s.replyEphemeral("Error, Not loaded").queue()
+                    pba?.firmBal(s) ?: s.commandNotLoaded()
                 }
             }
         }
@@ -61,40 +61,31 @@ class EconSlashCommands : PostmanCommandProvider {
         private val decimalFormat = econConfig.decimalFormat()
 
         private fun payUserCommand(event: SlashCommandEvent) {
-            val senderUser = getEssxUser(event) ?: run {
-                event.replyEphemeral("Unable to find target by that name!").queue()
-                return
-            }
-
-            val targetEntity = pba?.let { api ->
-                event["business"]?.let { option ->
-                    option.asString.let { name ->
-                        api.businessByName(name)?.let {
-                            BusinessEntity(it)
-                        }
-                    }
+            val senderEntity = getEssxUser(event)?.let(::UserEntity)
+                ?: run {
+                    event.replyEphemeral("Your account may not be synced!").queue()
+                    return
                 }
-            } ?: event.userOrNull()?.let { UserEntity(it) } ?: run {
-                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them")
-                    .queue()
-                return
-            }
 
-            val sender = UserEntity(senderUser)
-            PostmanEconManager(sender, event).transferFunds(targetEntity)
+            val targetEntity: EconEntity = pba?.let { api ->
+                event["business"]?.let { option ->
+                    api.businessByName(option.asString)?.let(::BusinessEntity)
+                }
+            } ?: event.userOrPlayer()?.let(::UserEntity) ?: return
+
+            PostmanEconManager(senderEntity, event).transferFunds(targetEntity)
         }
 
         private fun balanceUserCommand(event: SlashCommandEvent) {
             val senderUser = getEssxUser(event) ?: return
-            val user = event["user"]
-            val targetUser = user?.let { getEssxUser(it.asUser.id) } ?: senderUser
+            val targetUser = event.userOrPlayer() ?: senderUser
 
             val target = UserEntity(targetUser)
 
             event.replyEphemeralEmbed(
                 embedMessage(
                     "Balance for ${target.name}",
-                    "They currently have ${econConfig.currencySymbol}${decimalFormat.format(target.balance)} available in business balance"
+                    "They currently have ${econConfig.currencySymbol}${decimalFormat.format(target.balance)} available in their balance"
                 )
             ).queue()
         }
@@ -109,7 +100,6 @@ class EconSlashCommands : PostmanCommandProvider {
             addOption(OptionType.STRING, "player", "player to pay by username", false)
         }
 
-
         val commands = mutableListOf(
             PluginSlashCommand(
                 plugin,
@@ -117,7 +107,6 @@ class EconSlashCommands : PostmanCommandProvider {
                     addOption(OptionType.USER, "user", "user to check balance of", false)
                     addOption(OptionType.STRING, "player", "player to check balance of", false)
                 }
-
             )
         )
         // Add command if PlayerBusinesses is enabled

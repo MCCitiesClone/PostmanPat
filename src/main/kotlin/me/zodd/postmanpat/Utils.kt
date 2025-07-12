@@ -16,6 +16,7 @@ object Utils {
 
     object EssxUtils {
         /**
+         * Gets an essentials User from a discord User ID from DiscordSRV
          * @param id A discord user ID
          * @return An Essentials User
          */
@@ -24,6 +25,7 @@ object Utils {
         }
 
         /**
+         * Get an essentials User from a Minecraft UUID
          * @param uuid A players user ID
          * @return An Essentials User
          */
@@ -32,6 +34,7 @@ object Utils {
         }
 
         /**
+         * Get the User for the command runner
          * @param event SlashCommandEvent to get user from
          * @return An Essentials User
          */
@@ -83,6 +86,11 @@ object Utils {
             return this[userArg]?.asUser?.id?.let { getEssxUser(it) }
         }
 
+        fun SlashCommandEvent.commandNotLoaded() = replyEphemeral("Command not loaded!").queue()
+
+        /**
+         * Checks two arguments from a Slash command
+         */
         fun SlashCommandEvent.userOrPlayer(userArg: String = "user", playerArg: String = "player"): User? {
             return userOrNull(userArg)
                 ?: this[playerArg]?.asString?.let { plugin.server.getOfflinePlayer(it) }
