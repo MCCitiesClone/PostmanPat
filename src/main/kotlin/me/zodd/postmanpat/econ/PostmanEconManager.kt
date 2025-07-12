@@ -14,7 +14,7 @@ class PostmanEconManager(private val sender: EconEntity, private val event: Slas
     private val decimalFormat = econConf.decimalFormat()
 
     fun transferFunds(recipient: EconEntity) {
-        val commandSender = getEssxUser(event)?: run {
+        val commandSender = getEssxUser(event) ?: run {
             event.replyEphemeral("Unable to find user, please ensure your account is linked!").queue()
             return
         }
@@ -31,9 +31,7 @@ class PostmanEconManager(private val sender: EconEntity, private val event: Slas
             return
         }
 
-
         takeIf { sender.hasEnough(amount).emitError(event).isSuccess() } ?: return
-
         when (val payment = sender.pay(UserEntity(commandSender), recipient, amount)) {
             PPEconomyTransactionResult.PLUGIN_WITHDRAW -> {
                 payment.emitError(event, sender.name)
@@ -43,7 +41,7 @@ class PostmanEconManager(private val sender: EconEntity, private val event: Slas
             PPEconomyTransactionResult.PLUGIN_DEPOSIT -> {
                 payment.emitError(event, sender.name)
                 takeIf { sender.deposit(amount).isSuccess() } ?: run {
-                    plugin.logger.warning("Failed to revert transaction. ${sender.name} may be owed $amount")
+                    plugin.logger.info("Failed to revert transaction. ${sender.name} may be owed $amount")
                     PPEconomyTransactionResult.PLUGIN_REVERT_FAIL.emitError(event)
                 }
                 return

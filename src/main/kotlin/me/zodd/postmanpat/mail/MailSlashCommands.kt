@@ -49,11 +49,11 @@ class MailSlashCommands : PostmanCommandProvider {
                 return
             }
 
-            val targetUUID = if (userOpt != null) {
-                getEssxUser(userOpt.asUser.id)?.uuid
-            } else {
-                UUID.fromString(uuidOpt?.asString)
-            } ?: run {
+            val targetUUID = userOpt?.let {
+                getEssxUser(it.asUser.id)?.uuid
+            } ?: runCatching {
+                return@runCatching UUID.fromString(uuidOpt?.asString)
+            }.getOrElse {
                 event.replyEphemeral("UUID malformed").queue()
                 return
             }

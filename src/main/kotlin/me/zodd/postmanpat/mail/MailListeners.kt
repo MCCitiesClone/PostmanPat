@@ -68,25 +68,26 @@ class MailListeners(private var plugin: PostmanPat) {
         user.openPrivateChannel().queue { c: PrivateChannel ->
             mailManager.splitContent(content).forEach { m: String ->
                 c.sendMessage(m).queue(
-                    { }
+                    { /* On success */ }
                 ) OnFail@{
                     // If uuid is in cache, don't send another notification
                     notificationCache.getIfPresent(recipient.uuid)?.let {
-                        plugin.logger.info("Name was in list")
+                        // Name was present, return
                         return@OnFail
                     }
 
                     // If we're unable to send a DM to the user
                     val channelID = plugin.configManager.conf.moduleConfig.mail.notificationChannel
-                    val channel =
-                        plugin.jda.getTextChannelById(channelID)
-                    if (channel == null) {
+
+                    plugin.jda.getTextChannelById(channelID)?.let {
+                        // Cache the uuid
+                        notificationCache.put(recipient.uuid, "")
+                        it.sendMessage(user.asMention + " You have received mail! Check it with `/mail read`!")
+                            .queue()
+                    } ?: run {
                         plugin.logger.warning("Unable to find configured discord channel! $channelID")
                         return@OnFail
                     }
-                    notificationCache.put(recipient.uuid, "")
-                    channel.sendMessage(user.asMention + " You have received mail! Check it with `/mail read`!")
-                        .queue()
                 }
             }
         }

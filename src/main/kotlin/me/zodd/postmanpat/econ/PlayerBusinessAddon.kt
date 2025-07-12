@@ -49,7 +49,8 @@ class PlayerBusinessAddon {
     }
 
     internal fun firmBal(event: SlashCommandEvent) {
-        val senderUser = getEssxUser(event) ?: run {
+        // This really only verifies that the sender is linked
+        getEssxUser(event) ?: run {
             event.replyEphemeral("Unable to find User, account may not be linked!")
                 .queue()
             return
@@ -59,7 +60,6 @@ class PlayerBusinessAddon {
             event.replyEphemeral("Business by name [$businessName] was not found!").queue()
             return
         }
-        senderUser.hasFirmPermission(event, business) ?: return
         event.replyEphemeralEmbed(
             embedMessage(
                 "Balance for ${business.name}",
@@ -106,7 +106,7 @@ class PlayerBusinessAddon {
         }
     }
 
-    internal fun businessByName(name : String): Business? {
+    internal fun businessByName(name: String): Business? {
         return pba.getBusinessByName(name.lowercase())
     }
 }
