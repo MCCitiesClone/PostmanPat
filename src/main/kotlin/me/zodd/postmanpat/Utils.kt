@@ -82,24 +82,25 @@ object Utils {
             return getOption(option)
         }
 
-        fun SlashCommandEvent.userOrNull(userArg: String = "user"): User? {
+        /**
+         * Shorthand for sending an empty method, usually for commands that do nothing
+         * such as the base commands which only serve as a bridge for sub-commands
+         */
+        fun emptyCommand(): (SlashCommandEvent, User) -> Unit = { s, _ -> s.commandNotLoaded() }
+
+        fun SlashCommandEvent.essxUserOrNull(userArg: String = "user"): User? {
             return this[userArg]?.asUser?.id?.let { getEssxUser(it) }
         }
 
-        fun SlashCommandEvent.commandNotLoaded() = replyEphemeral("Command not loaded!").queue()
+        private fun SlashCommandEvent.commandNotLoaded() = replyEphemeral("Command not loaded!").queue()
 
         /**
          * Checks two arguments from a Slash command
          */
-        fun SlashCommandEvent.userOrPlayer(userArg: String = "user", playerArg: String = "player"): User? {
-            return userOrNull(userArg)
+        fun SlashCommandEvent.userOrPlayerArg(userArg: String = "user", playerArg: String = "player"): User? {
+            return essxUserOrNull(userArg)
                 ?: this[playerArg]?.asString?.let { plugin.server.getOfflinePlayer(it) }
                     ?.let { getEssxUser(it.uniqueId) }
-                ?: run {
-                    replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them")
-                        .queue()
-                    return null
-                }
         }
     }
 }

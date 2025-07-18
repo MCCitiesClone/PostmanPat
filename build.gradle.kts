@@ -32,6 +32,7 @@ dependencies {
     }
     compileOnly("org.spongepowered:configurate-hocon:4.1.2")
     compileOnly("org.spongepowered:configurate-extra-kotlin:4.1.2")
+    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     compileOnly("com.olziedev:playerbusinesses-api:1.5.1") {
         isTransitive = false
     }
@@ -43,6 +44,7 @@ dependencies {
         exclude("com.sk89q.worldguard")
         exclude("com.sk89q.worldedit")
     }
+    compileOnly("com.gitlab.ruany:LiteBansAPI:0.6.1")
 }
 
 val targetJavaVersion = 21

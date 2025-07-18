@@ -1,12 +1,14 @@
 package me.zodd.postmanpat.realty
 
+import com.earth2me.essentials.User
 import github.scarsz.discordsrv.api.commands.PluginSlashCommand
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.OptionType
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.CommandData
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
-import me.zodd.postmanpat.Utils.SlashCommandUtils.commandNotLoaded
+import me.zodd.postmanpat.Utils.SlashCommandUtils.emptyCommand
+import me.zodd.postmanpat.addons.AreashopAddon
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.Companion.areashop
@@ -27,19 +29,28 @@ class RealtySlashCommands : PostmanCommandProvider {
             }
         }
 
-        override fun exec(): (SlashCommandEvent) -> Unit {
-            return when (this) {
-                OWNER_TRANSFER -> { s ->
-                    areashop?.ownershipTransfer(s) ?: s.commandNotLoaded()
+        override fun exec(event: SlashCommandEvent, sender: User) {
+            when (this) {
+                OWNER_TRANSFER -> {
+                    areashop?.let {
+                        it::ownershipTransfer
+                    } ?: emptyCommand()
                 }
-                RENTAL_TRANSFER -> {s ->
-                    areashop?.rentalTransfer(s) ?: s.commandNotLoaded()
+
+                RENTAL_TRANSFER -> {
+                    areashop?.let {
+                        it::rentalTransfer
+                    } ?: emptyCommand()
                 }
-                PLOT_INFO -> { s ->
-                    areashop?.areaInfo(s) ?: s.commandNotLoaded()
+
+                PLOT_INFO -> {
+                    areashop?.let {
+                        it::areaInfo
+                    } ?: emptyCommand()
                 }
-                REALTY_BASE -> { _ -> /*This command is never run*/ }
-            }
+
+                REALTY_BASE -> emptyCommand()
+            }.invoke(event, sender)
         }
 
     }

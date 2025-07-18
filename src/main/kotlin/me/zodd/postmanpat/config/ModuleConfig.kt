@@ -10,4 +10,5 @@ data class ModuleConfig(
     val mail: MailConfig = MailConfig(),
     val econ: EconConfig = EconConfig(),
     val realty : RealtyConfig = RealtyConfig(),
+    val punishment: PunishmentConfig = PunishmentConfig(),
 )

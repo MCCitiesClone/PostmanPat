@@ -1,4 +1,4 @@
-package me.zodd.postmanpat.econ
+package me.zodd.postmanpat.addons
 
 import com.earth2me.essentials.User
 import com.olziedev.playerbusinesses.api.PlayerBusinessesAPI
@@ -8,12 +8,12 @@ import com.olziedev.playerbusinesses.api.business.BusinessPermission
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import me.zodd.postmanpat.PostmanPat
-import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
 import me.zodd.postmanpat.Utils.SlashCommandUtils.get
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeralEmbed
-import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
+import me.zodd.postmanpat.econ.PostmanEconManager
 import me.zodd.postmanpat.econ.entity.BusinessEntity
 import me.zodd.postmanpat.econ.entity.UserEntity
 import java.awt.Color
@@ -29,17 +29,12 @@ class PlayerBusinessAddon {
     private val econConf = PostmanPat.plugin.configManager.conf.moduleConfig.econ
     private val decimalFormat = econConf.decimalFormat()
 
-    internal fun listOwnedBusinesses(event: SlashCommandEvent) {
-        val senderUser = getEssxUser(event) ?: run {
-            event.replyEphemeral("Unable to find User, account may not be linked!")
-                .queue()
-            return
-        }
+    internal fun listOwnedBusinesses(event: SlashCommandEvent, sender: User) {
         val embedBuilder = EmbedBuilder()
             .setTitle("Owned Businesses")
             .setColor(Color.blue)
             .setFooter(PostmanPat.plugin.configManager.conf.serverBranding)
-        pba.getBusinessesByPlayer(senderUser.uuid).map { it.name }.map {
+        pba.getBusinessesByPlayer(sender.uuid).map { it.name }.map {
             embedBuilder.addField(it, "", true)
         }
 
@@ -48,13 +43,7 @@ class PlayerBusinessAddon {
         ).queue()
     }
 
-    internal fun firmBal(event: SlashCommandEvent) {
-        // This really only verifies that the sender is linked
-        getEssxUser(event) ?: run {
-            event.replyEphemeral("Unable to find User, account may not be linked!")
-                .queue()
-            return
-        }
+    internal fun firmBal(event: SlashCommandEvent, sender: User) {
         val businessName = event["business"]?.asString
         val business: Business = pba.getBusinessByName(businessName?.lowercase()) ?: run {
             event.replyEphemeral("Business by name [$businessName] was not found!").queue()
@@ -69,28 +58,25 @@ class PlayerBusinessAddon {
     }
 
 
-    internal fun firmPay(event: SlashCommandEvent) {
-
-        val senderUser = getEssxUser(event) ?: run {
-            event.replyEphemeral("Unable to find User, account may not be linked!")
-                .queue()
-            return
-        }
+    internal fun firmPay(event: SlashCommandEvent, sender: User) {
 
         val businessName = event["business"]?.asString
 
-        val targetUser = event.userOrPlayer() ?: return
+        val targetUser = event.userOrPlayerArg() ?: run {
+            event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
+            return
+        }
 
         val business: Business = pba.getBusinessByName(businessName?.lowercase()) ?: run {
             event.replyEphemeral("Business by name [$businessName] was not found!").queue()
             return
         }
 
-        senderUser.hasFirmPermission(event, business) ?: return
+        sender.hasFirmPermission(event, business) ?: return
 
-        val sender = BusinessEntity(business)
+        val businessSender = BusinessEntity(business)
         val receiver = UserEntity(targetUser)
-        PostmanEconManager(sender, event).transferFunds(receiver)
+        PostmanEconManager(businessSender, event).transferFunds(receiver)
     }
 
     private fun User.hasFirmPermission(event: SlashCommandEvent, business: Business): BStaff? {

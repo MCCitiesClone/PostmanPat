@@ -21,3 +21,6 @@ dependencies:
     AreaShop:
         load: BEFORE
         required: false
+    LiteBans:
+      load: BEFORE
+      required: false

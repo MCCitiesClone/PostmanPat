@@ -1,18 +1,19 @@
 package me.zodd.postmanpat.econ
 
+import com.earth2me.essentials.User
 import github.scarsz.discordsrv.api.commands.PluginSlashCommand
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.OptionType
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.CommandData
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
-import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeralEmbed
-import me.zodd.postmanpat.Utils.SlashCommandUtils.commandNotLoaded
+import me.zodd.postmanpat.Utils.SlashCommandUtils.emptyCommand
 import me.zodd.postmanpat.Utils.SlashCommandUtils.get
-import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
+import me.zodd.postmanpat.addons.PlayerBusinessAddon
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import me.zodd.postmanpat.econ.EconSlashCommands.EconCommands.Companion.pba
@@ -37,48 +38,52 @@ class EconSlashCommands : PostmanCommandProvider {
             }
         }
 
-        override fun exec(): (SlashCommandEvent) -> Unit {
-            return when (this) {
+        override fun exec(event: SlashCommandEvent, sender: User) {
+            when (this) {
                 ECON_PAY -> this::payUserCommand
                 ECON_BALANCE -> this::balanceUserCommand
-                ECON_FIRM_BASE -> { _ -> /*This command is never run*/ }
-                ECON_FIRM_PAY -> { s ->
-                    pba?.firmPay(s) ?: s.commandNotLoaded()
+                ECON_FIRM_PAY -> {
+                    pba?.let {
+                        it::firmPay
+                    } ?: emptyCommand()
                 }
 
-                ECON_FIRM_LIST -> { s ->
-                    pba?.listOwnedBusinesses(s) ?: s.commandNotLoaded()
+                ECON_FIRM_LIST -> {
+                    pba?.let { it::listOwnedBusinesses } ?: emptyCommand()
                 }
 
-                ECON_FIRM_BALANCE -> { s ->
-                    pba?.firmBal(s) ?: s.commandNotLoaded()
+                ECON_FIRM_BALANCE -> {
+                    pba?.let {
+                        it::firmBal
+                    } ?: emptyCommand()
                 }
-            }
+
+                ECON_FIRM_BASE -> emptyCommand()
+
+            }.invoke(event, sender)
         }
 
         private val config = plugin.configManager.conf
         private val econConfig = config.moduleConfig.econ
         private val decimalFormat = econConfig.decimalFormat()
 
-        private fun payUserCommand(event: SlashCommandEvent) {
-            val senderEntity = getEssxUser(event)?.let(::UserEntity)
-                ?: run {
-                    event.replyEphemeral("Your account may not be synced!").queue()
-                    return
-                }
+        private fun payUserCommand(event: SlashCommandEvent, sender: User) {
+            val senderEntity = sender.let(::UserEntity)
 
             val targetEntity: EconEntity = pba?.let { api ->
                 event["business"]?.let { option ->
                     api.businessByName(option.asString)?.let(::BusinessEntity)
                 }
-            } ?: event.userOrPlayer()?.let(::UserEntity) ?: return
+            } ?: event.userOrPlayerArg()?.let(::UserEntity) ?: run {
+                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
+                return
+            }
 
             PostmanEconManager(senderEntity, event).transferFunds(targetEntity)
         }
 
-        private fun balanceUserCommand(event: SlashCommandEvent) {
-            val senderUser = getEssxUser(event) ?: return
-            val targetUser = event.userOrPlayer() ?: senderUser
+        private fun balanceUserCommand(event: SlashCommandEvent, sender: User) {
+            val targetUser = event.userOrPlayerArg() ?: sender
 
             val target = UserEntity(targetUser)
 

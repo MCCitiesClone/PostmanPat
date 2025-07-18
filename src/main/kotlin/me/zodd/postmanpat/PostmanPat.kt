@@ -8,6 +8,7 @@ import github.scarsz.discordsrv.api.commands.SlashCommandProvider
 import github.scarsz.discordsrv.dependencies.jda.api.JDA
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import github.scarsz.discordsrv.util.DiscordUtil
+import me.zodd.postmanpat.addons.LitebansAddon
 import me.zodd.postmanpat.config.ConfigManager
 import me.zodd.postmanpat.config.PostmanPatConfig
 import me.zodd.postmanpat.econ.EconSlashCommands
@@ -25,6 +26,8 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
+import me.zodd.postmanpat.Utils.EssxUtils
+import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 
 
 class PostmanPat : JavaPlugin(), SlashCommandProvider {
@@ -46,6 +49,10 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
 
     companion object {
         val plugin by lazy { getPlugin(PostmanPat::class.java) }
+
+        val litebans: LitebansAddon? by lazy {
+            return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LiteBans") }?.let { LitebansAddon() }
+        }
     }
 
     override fun onEnable() {
@@ -68,7 +75,20 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
     }
 
     @SlashCommand(path = "*")
-    fun processMailSlashCommand(event: SlashCommandEvent) {
+    fun processSlashCommands(event: SlashCommandEvent) {
+
+        // Pre-check for banned users and ensure runner is a synced user.
+        val user = EssxUtils.getEssxUser(event)?.let { user ->
+            if (litebans?.isLBBanned(user) == true || litebans?.isDeported(user) == true) {
+                event.replyEphemeral("You have been deported from the server and cannot use commands.").queue()
+                return
+            }
+            user
+        } ?: run {
+            event.replyEphemeral("You must be synced to use postman pat's commands!").queue()
+            return
+        }
+
         when (event.commandPath.substringBefore("/")) {
             ECON_PAY.command -> ECON_PAY
             ECON_BALANCE.command -> ECON_BALANCE
@@ -95,7 +115,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
             }
 
             else -> null
-        }?.exec()?.invoke(event)
+        }?.exec(event, user)
     }
 
     override fun onDisable() {

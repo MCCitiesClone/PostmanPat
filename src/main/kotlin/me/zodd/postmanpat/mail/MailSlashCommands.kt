@@ -6,15 +6,17 @@ import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCom
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.OptionType
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.CommandData
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
+import me.zodd.postmanpat.PostmanPat.Companion.litebans
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
-import me.zodd.postmanpat.Utils.EssxUtils.manager
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
-import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayer
+import me.zodd.postmanpat.Utils.SlashCommandUtils.emptyCommand
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import net.essentialsx.api.v2.services.mail.MailMessage
 import java.util.UUID
+import me.zodd.postmanpat.Utils.SlashCommandUtils.get
 
 class MailSlashCommands : PostmanCommandProvider {
 
@@ -25,24 +27,21 @@ class MailSlashCommands : PostmanCommandProvider {
         MAIL_MARK_READ(plugin.configManager.conf.moduleConfig.mail.markReadSubCommand),
         MAIL_IGNORE(plugin.configManager.conf.moduleConfig.mail.ignoreSubCommand);
 
-        override fun exec(): (SlashCommandEvent) -> Unit {
-            return when (this) {
+        override fun exec(event: SlashCommandEvent, sender: User) {
+
+
+            when (this) {
                 MAIL_READ -> this::mailReadCommand
                 MAIL_SEND -> this::mailSendCommand
                 MAIL_MARK_READ -> this::markAsReadCommand
                 MAIL_IGNORE -> this::ignoreUserCommand
-                MAIL_BASE -> { _ -> /*This command is never run*/ }
-            }
+                MAIL_BASE -> emptyCommand()
+            }.invoke(event,sender)
         }
 
-        private fun ignoreUserCommand(event: SlashCommandEvent) {
-            val user = getEssxUser(event) ?: run {
-                event.replyEphemeral("Unable to find Minecraft User!").queue()
-                return
-            }
-
-            val userOpt = event.getOption("user")
-            val uuidOpt = event.getOption("uuid")
+        private fun ignoreUserCommand(event: SlashCommandEvent, sender: User) {
+            val userOpt = event["user"]
+            val uuidOpt = event["uuid"]
 
             if (userOpt == null && uuidOpt == null) {
                 event.replyEphemeral("You may target a user by their @, or by a players UUID!").queue()
@@ -59,14 +58,11 @@ class MailSlashCommands : PostmanCommandProvider {
             }
 
             val userList: MutableList<UUID> =
-                plugin.userStorageManager.conf.mailIgnoreList.getOrDefault(user.uuid, mutableListOf())
+                plugin.userStorageManager.conf.mailIgnoreList.getOrDefault(sender.uuid, mutableListOf())
 
             val targetUser = getEssxUser(targetUUID)
-            val targetName = if (targetUser == null) {
-                targetUUID.toString()
-            } else {
-                targetUser.name
-            }
+
+            val targetName = targetUser?.name ?: targetUUID.toString()
 
             if (userList.remove(targetUUID)) {
                 event.replyEphemeral("You have removed $targetName to your ignore list.")
@@ -76,68 +72,52 @@ class MailSlashCommands : PostmanCommandProvider {
                 event.replyEphemeral("You have added $targetName to your ignore list.")
                     .queue()
             }
-            plugin.userStorageManager.conf.mailIgnoreList[user.uuid] = userList
+            plugin.userStorageManager.conf.mailIgnoreList[sender.uuid] = userList
             plugin.userStorageManager.save()
         }
 
-        private fun markAsReadCommand(event: SlashCommandEvent) {
-            val user = getEssxUser(event.user.id) ?: run {
-                event.reply("Unable to find user, is your account linked?").setEphemeral(true).queue()
+        private fun markAsReadCommand(event: SlashCommandEvent, sender: User) {
+            if (litebans?.isLBMuted(sender) == true) {
+                event.replyEphemeral("You have been muted from the server and cannot send mail at this time.").queue()
                 return
             }
-            markMailAsRead(user, user.mailMessages)
+            markMailAsRead(sender, sender.mailMessages)
             event.reply("Mail has been marked as read!").setEphemeral(true).queue()
         }
 
-        private fun mailReadCommand(event: SlashCommandEvent) {
-            val user = getEssxUser(event.user.id) ?: run {
-                event.replyEphemeral("Unable to find user, is your account linked?").queue()
-                return
-            }
-            val mailMessage = user.mailMessages
+        private fun mailReadCommand(event: SlashCommandEvent, sender: User) {
+            val mailMessage = sender.mailMessages
 
             val includeRead = event.getOption(plugin.configManager.conf.moduleConfig.mail.includeReadArg)
             val includeBool = includeRead != null && includeRead.asBoolean
 
-            if (!includeBool && user.unreadMailAmount <= 0) {
+            if (!includeBool && sender.unreadMailAmount <= 0) {
                 event.replyEphemeral("No new mail!").queue()
                 return
             }
 
             val mailManager = DiscordMailManager(mailMessage, includeBool)
-            val opt = event.getOption("page")
-            val content: String = if (opt == null) {
-                mailManager.getPage(0L)
-            } else {
-                val selPage = opt.asLong
-                try {
-                    mailManager.getPage(selPage - 1)
-                } catch (e: IndexOutOfBoundsException) {
-                    "No mail on page $selPage"
+
+            val content = event["page"]?.asLong?.let { opt ->
+                runCatching {
+                    mailManager.getPage(opt - 1)
+                }.getOrElse {
+                    "No mail on page $opt"
                 }
-            }
+            } ?: mailManager.getPage(0L)
 
             event.replyEphemeral(content).queue()
         }
 
-        private fun mailSendCommand(event: SlashCommandEvent) {
-            val user = event.userOrPlayer() ?: run {
-                return
-            }
-            val senderUser = event.user
-
-            val senderUUID = manager().getUuid(senderUser.id)
-
-            if (senderUUID == null) {
-                event.replyEphemeral("One or more users do not have a linked account!").queue()
+        private fun mailSendCommand(event: SlashCommandEvent, sender: User) {
+            val user = event.userOrPlayerArg() ?: run {
+                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
                 return
             }
 
-            val senderEssxUser = plugin.ess?.getUser(senderUUID)
+            val message = event["message"]?.asString
 
-            val message = event.getOption("message")?.asString
-
-            user.sendMail(senderEssxUser, message)
+            user.sendMail(sender, message)
 
             event.replyEphemeral("Sent mail to " + user.displayName).queue()
         }
