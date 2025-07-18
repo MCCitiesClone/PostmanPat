@@ -30,16 +30,19 @@ class PlaytimeSlashCommands : PostmanCommandProvider {
         private val playtimeConfig = plugin.configManager.conf.moduleConfig.playtime
 
         fun checkPlaytime(event: SlashCommandEvent, sender: User) {
-            event.playerFromUserOrPlayerArg()?.let {
-                PostmanPat.papi?.parsePlaytime(
-                    it, """
+            event.playerFromUserOrPlayerArg().let {
+                (it ?: sender.offline).let { player ->
+                    PostmanPat.papi?.parsePlaytime(
+                        player, """
+                    [${player.name}]
                     Join Date: ${playtimeConfig.joinDatePlaceholder}
                     Total Playtime: ${playtimeConfig.totalPlaytimePlaceholder}
                     30 Day Playtime: ${playtimeConfig.monthPlaytimePlaceholder}
                     7 Day Playtime: ${playtimeConfig.weekPlaytimePlaceholder}
                     24 Hour Playtime: ${playtimeConfig.dailyPlaytimePlaceholder}
                 """.trimIndent()
-                )
+                    )
+                }
             }?.let {
                 event.replyEphemeral(it).queue()
             }

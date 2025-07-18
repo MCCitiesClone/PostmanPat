@@ -110,10 +110,7 @@ object Utils {
             userArg: String = "user",
             playerArg: String = "player"
         ): OfflinePlayer? {
-            return essxUserOrNull(userArg)?.let { plugin.server.getOfflinePlayer(it.uuid) }
-                ?: this[playerArg]?.asString?.let {
-                    plugin.server.getOfflinePlayer(it)
-                }
+            return userOrPlayerArg(userArg, playerArg)?.offline
 
         }
 
