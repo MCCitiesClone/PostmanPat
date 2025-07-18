@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.zodd"
-version = "2.0.0-SNAPSHOT"
+version = "2.2.0"
 
 repositories {
     mavenCentral()
@@ -18,6 +18,7 @@ repositories {
     // DemocracyBusiness
     maven(url = "https://repo.olziedev.com/")
     maven(url = "https://maven.enginehub.org/repo/")
+    maven(url = "https://repo.extendedclip.com/releases/")
 }
 
 dependencies {
@@ -45,6 +46,7 @@ dependencies {
         exclude("com.sk89q.worldedit")
     }
     compileOnly("com.gitlab.ruany:LiteBansAPI:0.6.1")
+    compileOnly("me.clip:placeholderapi:2.11.6")
 }
 
 val targetJavaVersion = 21

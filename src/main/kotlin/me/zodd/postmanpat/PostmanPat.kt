@@ -19,6 +19,7 @@ import me.zodd.postmanpat.mail.MailSlashCommands.MailCommands.*
 import me.zodd.postmanpat.mail.MailUserStorage
 import me.zodd.postmanpat.realty.RealtySlashCommands
 import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.*
+import me.zodd.postmanpat.playtime.PlaytimeSlashCommands.PlaytimeCommands.*
 import net.essentialsx.api.v2.events.UserMailEvent
 import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
@@ -28,6 +29,8 @@ import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 import me.zodd.postmanpat.Utils.EssxUtils
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
+import me.zodd.postmanpat.addons.PapiAddon
+import me.zodd.postmanpat.playtime.PlaytimeSlashCommands
 
 
 class PostmanPat : JavaPlugin(), SlashCommandProvider {
@@ -52,6 +55,10 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
 
         val litebans: LitebansAddon? by lazy {
             return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LiteBans") }?.let { LitebansAddon() }
+        }
+
+        val papi: PapiAddon? by lazy {
+            return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI") }?.let { PapiAddon() }
         }
     }
 
@@ -114,6 +121,8 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
+            PLAYTIME_CHECK.command -> PLAYTIME_CHECK
+
             else -> null
         }?.exec(event, user)
     }
@@ -128,6 +137,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 addAll(EconSlashCommands().slashCommands())
                 addAll(MailSlashCommands().slashCommands())
                 addAll(RealtySlashCommands().slashCommands())
+                addAll(PlaytimeSlashCommands().slashCommands())
             }
         )
     }

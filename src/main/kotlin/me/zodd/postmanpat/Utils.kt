@@ -9,6 +9,9 @@ import github.scarsz.discordsrv.objects.managers.AccountLinkManager
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
+import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
+import org.bukkit.OfflinePlayer
+import org.bukkit.entity.Player
 import java.awt.Color
 import java.util.UUID
 
@@ -102,5 +105,18 @@ object Utils {
                 ?: this[playerArg]?.asString?.let { plugin.server.getOfflinePlayer(it) }
                     ?.let { getEssxUser(it.uniqueId) }
         }
+
+        fun SlashCommandEvent.playerFromUserOrPlayerArg(
+            userArg: String = "user",
+            playerArg: String = "player"
+        ): OfflinePlayer? {
+            return essxUserOrNull(userArg)?.let { plugin.server.getOfflinePlayer(it.uuid) }
+                ?: this[playerArg]?.asString?.let {
+                    plugin.server.getOfflinePlayer(it)
+                }
+
+        }
+
+
     }
 }
