@@ -12,34 +12,36 @@ import me.zodd.postmanpat.addons.AreashopAddon
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
 import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.Companion.areashop
-import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.OWNER_TRANSFER
+import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.LANDLORD_TRANSFER
 
 class RealtySlashCommands : PostmanCommandProvider {
 
     enum class RealtyCommands(override val command: String) : PPSlashCommand<RealtyCommands> {
         REALTY_BASE(plugin.configManager.conf.moduleConfig.realty.baseCommand),
         PLOT_INFO(plugin.configManager.conf.moduleConfig.realty.plotInfoCommand),
-        OWNER_TRANSFER(plugin.configManager.conf.moduleConfig.realty.ownershipTransferCommand),
-        RENTAL_TRANSFER(plugin.configManager.conf.moduleConfig.realty.rentalTransferCommand)
+        LANDLORD_TRANSFER(plugin.configManager.conf.moduleConfig.realty.landlordTransferCommand),
+        OWNER_TRANSFER(plugin.configManager.conf.moduleConfig.realty.ownershipTransferCommand)
         ;
 
         companion object {
             internal val areashop: AreashopAddon? by lazy {
-                return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("areashop") }?.let { AreashopAddon() }
+                return@lazy takeIf {
+                    plugin.server.pluginManager.isPluginEnabled("areashop") && plugin.configManager.conf.moduleConfig.realty.enabled
+                }?.let { AreashopAddon() }
             }
         }
 
         override fun exec(event: SlashCommandEvent, sender: User) {
             when (this) {
-                OWNER_TRANSFER -> {
+                LANDLORD_TRANSFER -> {
                     areashop?.let {
-                        it::ownershipTransfer
+                        it::landlordTransfer
                     } ?: emptyCommand()
                 }
 
-                RENTAL_TRANSFER -> {
+                OWNER_TRANSFER -> {
                     areashop?.let {
-                        it::rentalTransfer
+                        it::ownerTransfer
                     } ?: emptyCommand()
                 }
 
@@ -63,12 +65,15 @@ class RealtySlashCommands : PostmanCommandProvider {
                     plugin,
                     CommandData(RealtyCommands.REALTY_BASE.command, "Base command for realty commands")
                         .addSubcommands(
-                            SubcommandData(OWNER_TRANSFER.command, "Command to transfer plot ownership").apply {
+                            SubcommandData(LANDLORD_TRANSFER.command, "Command to transfer plot landlordship").apply {
                                 addOption(OptionType.STRING, "region", "property to transfer", true)
                                 addOption(OptionType.USER, "user", "user to transfer property to", false)
                                 addOption(OptionType.STRING, "player", "player to transfer property to", false)
                             },
-                            SubcommandData(RealtyCommands.RENTAL_TRANSFER.command, "Command to transfer a rental").apply {
+                            SubcommandData(
+                                RealtyCommands.OWNER_TRANSFER.command,
+                                "Command to transfer a plots ownership"
+                            ).apply {
                                 addOption(OptionType.STRING, "region", "rental to transfer", true)
                                 addOption(OptionType.USER, "user", "user to transfer property to", false)
                                 addOption(OptionType.STRING, "player", "player to transfer property to", false)

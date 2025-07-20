@@ -31,7 +31,7 @@ class AreashopAddon {
         } ?: event.replyEphemeral("Region may not exist!").queue()
     }
 
-    fun ownershipTransfer(event: SlashCommandEvent, sender: User) {
+    fun landlordTransfer(event: SlashCommandEvent, sender: User) {
         transfer(event) { rg, user, runner ->
             if (!rg.isLandlord(runner)) {
                 event.replyEphemeral("You are not the landlord of the property: ${rg.name}").queue()
@@ -43,7 +43,7 @@ class AreashopAddon {
     }
 
 
-    fun rentalTransfer(event: SlashCommandEvent, sender: User) {
+    fun ownerTransfer(event: SlashCommandEvent, sender: User) {
         transfer(event) { rg, user, runner ->
             if (!rg.isOwner(runner)) {
                 event.replyEphemeral("You are not the owner of the property: ${rg.name}").queue()
@@ -53,7 +53,6 @@ class AreashopAddon {
             rg.owner = user.uuid
             return@transfer true
         }
-
     }
 
     private fun transfer(

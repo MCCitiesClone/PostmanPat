@@ -7,10 +7,10 @@ import org.spongepowered.configurate.objectmapping.meta.Comment
 data class RealtyConfig(
     @field:Comment("Whether the realty module is enabled, requires Areashop plugin")
     val enabled: Boolean = false,
+    @field:Comment("Landlord Transfer command")
+    val landlordTransferCommand: String = "transfer-landlord",
     @field:Comment("Ownership Transfer command")
     val ownershipTransferCommand: String = "transfer-ownership",
-    @field:Comment("Rental Transfer command")
-    val rentalTransferCommand: String = "transfer-rental",
     @field:Comment("Information about a plot")
     val plotInfoCommand: String = "info",
     @field:Comment("Base realty command")

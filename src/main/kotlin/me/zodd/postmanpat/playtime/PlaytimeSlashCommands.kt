@@ -20,7 +20,7 @@ class PlaytimeSlashCommands : PostmanCommandProvider {
         override fun exec(event: SlashCommandEvent, sender: User) {
             when (this) {
                 PLAYTIME_CHECK -> {
-                    PostmanPat.papi?.let {
+                    plugin.papi?.let {
                         this::checkPlaytime
                     } ?: emptyCommand()
                 }
@@ -32,7 +32,7 @@ class PlaytimeSlashCommands : PostmanCommandProvider {
         fun checkPlaytime(event: SlashCommandEvent, sender: User) {
             event.playerFromUserOrPlayerArg().let {
                 (it ?: sender.offline).let { player ->
-                    PostmanPat.papi?.parsePlaytime(
+                    plugin.papi?.parsePlaytime(
                         player, """
                     [${player.name}]
                     Join Date: ${playtimeConfig.joinDatePlaceholder}
@@ -53,7 +53,7 @@ class PlaytimeSlashCommands : PostmanCommandProvider {
     }
 
     override fun slashCommands(): List<PluginSlashCommand> {
-        return PostmanPat.papi?.let {
+        return plugin.papi?.let {
             listOf(
                 PluginSlashCommand(
                     plugin,

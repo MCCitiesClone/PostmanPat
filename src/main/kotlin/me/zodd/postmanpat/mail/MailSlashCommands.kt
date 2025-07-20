@@ -6,7 +6,6 @@ import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCom
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.OptionType
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.CommandData
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
-import me.zodd.postmanpat.PostmanPat.Companion.litebans
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
@@ -36,7 +35,7 @@ class MailSlashCommands : PostmanCommandProvider {
                 MAIL_MARK_READ -> this::markAsReadCommand
                 MAIL_IGNORE -> this::ignoreUserCommand
                 MAIL_BASE -> emptyCommand()
-            }.invoke(event,sender)
+            }.invoke(event, sender)
         }
 
         private fun ignoreUserCommand(event: SlashCommandEvent, sender: User) {
@@ -77,7 +76,7 @@ class MailSlashCommands : PostmanCommandProvider {
         }
 
         private fun markAsReadCommand(event: SlashCommandEvent, sender: User) {
-            if (litebans?.isLBMuted(sender) == true) {
+            if (plugin.litebans?.isLBMuted(sender) == true) {
                 event.replyEphemeral("You have been muted from the server and cannot send mail at this time.").queue()
                 return
             }
@@ -111,7 +110,8 @@ class MailSlashCommands : PostmanCommandProvider {
 
         private fun mailSendCommand(event: SlashCommandEvent, sender: User) {
             val user = event.userOrPlayerArg() ?: run {
-                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
+                event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them")
+                    .queue()
                 return
             }
 

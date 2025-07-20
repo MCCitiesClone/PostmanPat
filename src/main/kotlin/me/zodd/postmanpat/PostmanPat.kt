@@ -32,7 +32,6 @@ import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.addons.PapiAddon
 import me.zodd.postmanpat.playtime.PlaytimeSlashCommands
 
-
 class PostmanPat : JavaPlugin(), SlashCommandProvider {
     val srv: DiscordSRV = DiscordSRV.getPlugin()
     val ess: IEssentials? = server.pluginManager.getPlugin("Essentials") as IEssentials?
@@ -50,16 +49,16 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
     val jda: JDA
         get() = DiscordUtil.getJda()
 
+    val litebans: LitebansAddon? by lazy {
+        return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LiteBans") }?.let { LitebansAddon() }
+    }
+
+    val papi: PapiAddon? by lazy {
+        return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI") }?.let { PapiAddon() }
+    }
+
     companion object {
         val plugin by lazy { getPlugin(PostmanPat::class.java) }
-
-        val litebans: LitebansAddon? by lazy {
-            return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LiteBans") }?.let { LitebansAddon() }
-        }
-
-        val papi: PapiAddon? by lazy {
-            return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("PlaceholderAPI") }?.let { PapiAddon() }
-        }
     }
 
     override fun onEnable() {
@@ -96,9 +95,13 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
             return
         }
 
+        // Commands are processed here, the enum stores the command string #command
+        // Then should point to the Enum itself
+        // Return null if no valid options
         when (event.commandPath.substringBefore("/")) {
             ECON_PAY.command -> ECON_PAY
             ECON_BALANCE.command -> ECON_BALANCE
+
             MAIL_BASE.command -> when (event.subcommandName) {
                 MAIL_READ.command -> MAIL_READ
                 MAIL_SEND.command -> MAIL_SEND
@@ -107,6 +110,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
+            // Player Businesses Commands
             ECON_FIRM_BASE.command -> when (event.subcommandName) {
                 ECON_FIRM_PAY.command -> ECON_FIRM_PAY
                 ECON_FIRM_LIST.command -> ECON_FIRM_LIST
@@ -114,9 +118,10 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
+            // Areashop commands
             REALTY_BASE.command -> when (event.subcommandName) {
+                LANDLORD_TRANSFER.command -> LANDLORD_TRANSFER
                 OWNER_TRANSFER.command -> OWNER_TRANSFER
-                RENTAL_TRANSFER.command -> RENTAL_TRANSFER
                 PLOT_INFO.command -> PLOT_INFO
                 else -> null
             }
