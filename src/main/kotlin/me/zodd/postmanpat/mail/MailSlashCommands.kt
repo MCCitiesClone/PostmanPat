@@ -119,6 +119,10 @@ class MailSlashCommands : PostmanCommandProvider {
 
             user.sendMail(sender, message)
 
+            // Regular mail gets logged in console, but mail sent through discord does not
+            // This enabled mail to get logged for better tracking
+            plugin.logger.info("Mail Sent - ${sender.name} -> ${user.name}: $message")
+
             event.replyEphemeral("Sent mail to " + user.displayName).queue()
         }
 
