@@ -69,7 +69,6 @@ class EconSlashCommands : PostmanCommandProvider {
 
         private fun payUserCommand(event: SlashCommandEvent, sender: User) {
             val senderEntity = sender.let(::UserEntity)
-
             val targetEntity: EconEntity = pba?.let { api ->
                 event["business"]?.let { option ->
                     api.businessByName(option.asString)?.let(::BusinessEntity)

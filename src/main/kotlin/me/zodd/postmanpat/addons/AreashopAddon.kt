@@ -11,13 +11,11 @@ import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
 import java.util.UUID
 
 class AreashopAddon {
-    companion object {
-        private val areashop: AreaShop by lazy {
-            AreaShop.getInstance()
-        }
-
-        private val fileManager get() = areashop.fileManager
+    private val areashop: AreaShop by lazy {
+        AreaShop.getInstance()
     }
+
+    private val fileManager get() = areashop.fileManager
 
     fun areaInfo(event: SlashCommandEvent, sender: User) {
         fileManager?.getRegion(event["region"]?.asString)?.let { rg ->

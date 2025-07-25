@@ -9,12 +9,10 @@ import litebans.api.Database
 import me.zodd.postmanpat.PostmanPat
 
 class LitebansAddon {
-    companion object {
-        private val litebansDB: Database
-            get() {
-                return Database.get()
-            }
-    }
+    private val litebansDB: Database
+        get() {
+            return Database.get()
+        }
 
     private val deportationPhrase = PostmanPat.plugin.configManager.conf.moduleConfig.punishment.warnPhrase
 

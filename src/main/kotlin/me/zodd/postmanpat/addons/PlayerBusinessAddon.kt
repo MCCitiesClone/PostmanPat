@@ -20,10 +20,8 @@ import java.awt.Color
 
 class PlayerBusinessAddon {
 
-    companion object {
-        private val pba: PlayerBusinessesAPI by lazy {
-            PlayerBusinessesAPI.getInstance()
-        }
+    private val pba: PlayerBusinessesAPI by lazy {
+        PlayerBusinessesAPI.getInstance()
     }
 
     private val econConf = PostmanPat.plugin.configManager.conf.moduleConfig.econ
