@@ -1,9 +1,11 @@
 package me.zodd.postmanpat.addons
 
 import com.earth2me.essentials.User
+import com.sk89q.worldguard.domains.DefaultDomain
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import me.wiefferink.areashop.AreaShop
 import me.wiefferink.areashop.regions.GeneralRegion
+import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.SlashCommandUtils.get
@@ -16,6 +18,8 @@ class AreashopAddon {
     }
 
     private val fileManager get() = areashop.fileManager
+
+    private val defaultWorld = plugin.configManager.conf.moduleConfig.realty.regionWorld
 
     fun areaInfo(event: SlashCommandEvent, sender: User) {
         fileManager?.getRegion(event["region"]?.asString)?.let { rg ->
@@ -48,7 +52,15 @@ class AreashopAddon {
                 return@transfer false
             }
 
-            rg.owner = user.uuid
+            areashop.getRegionManager(plugin.server.worlds.firstOrNull { it.name.equals(defaultWorld, true) })
+                .getRegion(event["region"]?.asString)?.let { pr ->
+                    pr.members.clear()
+                    rg.owner = user.uuid
+                    pr.members = DefaultDomain().also {
+                        it.addPlayer(user.name)
+                    }
+                } ?: run {
+            }
             return@transfer true
         }
     }

@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.zodd"
-version = "2.3.3"
+version = "2.3.4"
 
 repositories {
     mavenCentral()
@@ -45,6 +45,7 @@ dependencies {
         exclude("com.sk89q.worldguard")
         exclude("com.sk89q.worldedit")
     }
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14")
     compileOnly("com.gitlab.ruany:LiteBansAPI:0.6.1")
     compileOnly("me.clip:placeholderapi:2.11.6")
 }

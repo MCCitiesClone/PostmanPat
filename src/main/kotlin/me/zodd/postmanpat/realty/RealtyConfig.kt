@@ -14,7 +14,7 @@ data class RealtyConfig(
     @field:Comment("Information about a plot")
     val plotInfoCommand: String = "info",
     @field:Comment("Base realty command")
-    val baseCommand: String = "realty"
-) {
-
-}
+    val baseCommand: String = "realty",
+    @field:Comment("The world where shop regions are found")
+    val regionWorld: String = "world"
+)
