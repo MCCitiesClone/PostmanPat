@@ -9,6 +9,11 @@ version = "2.3.5"
 // Realty API version (JitPack tag on MCCitiesClone/realty).
 val realtyVersion = "v1.4.4"
 
+// Hibernia Economy API version (JitPack tag on MCCitiesClone/hibernia-economy).
+// Provides the business-api and treasury-api surfaces consumed below. Bump when a
+// newer release changes the BusinessApi/TreasuryApi methods used by the econ module.
+val hiberniaEconomyVersion = "v2.3.379"
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
@@ -16,10 +21,8 @@ repositories {
     maven(url = "https://repo.essentialsx.net/releases/")
     // DiscordSRV
     maven(url = "https://nexus.scarsz.me/content/repositories/public/")
-    // VaultAPI
+    // Realty + Hibernia Economy (business-api, treasury-api)
     maven(url = "https://jitpack.io")
-    // DemocracyBusiness
-    maven(url = "https://repo.olziedev.com/")
     maven(url = "https://maven.enginehub.org/repo/")
     maven(url = "https://repo.extendedclip.com/releases/")
 }
@@ -31,13 +34,17 @@ dependencies {
     compileOnly("net.essentialsx:EssentialsX:2.21.0") {
         isTransitive = false
     }
-    compileOnly("com.github.MilkBowl:VaultAPI:1.7") {
-        isTransitive = false
-    }
     compileOnly("org.spongepowered:configurate-hocon:4.1.2")
     compileOnly("org.spongepowered:configurate-extra-kotlin:4.1.2")
     compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
-    compileOnly("com.olziedev:playerbusinesses-api:1.5.1") {
+    // Hibernia Economy (MCCitiesClone/hibernia-economy) — resolved via JitPack.
+    // Money is moved through Treasury; firm lookups/permissions through the Business API.
+    // Both are provided at runtime by the Treasury/Business plugins, so exclude their
+    // transitive platform/lombok deps.
+    compileOnly("com.github.MCCitiesClone.hibernia-economy:treasury-api:$hiberniaEconomyVersion") {
+        isTransitive = false
+    }
+    compileOnly("com.github.MCCitiesClone.hibernia-economy:business-api:$hiberniaEconomyVersion") {
         isTransitive = false
     }
     // Realty (MCCitiesClone/realty) — resolved via JitPack. Bump the tag above when a

@@ -1,53 +1,55 @@
 package me.zodd.postmanpat.econ
 
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
+import io.paradaux.treasury.model.economy.TransferRequest
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
-import me.zodd.postmanpat.Utils.EssxUtils.getEssxUser
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
-import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.econ.entity.EconEntity
-import me.zodd.postmanpat.econ.entity.UserEntity
+import java.math.BigDecimal
+import java.util.UUID
 
 class PostmanEconManager(private val sender: EconEntity, private val event: SlashCommandEvent) {
 
     private val econConf = plugin.configManager.conf.moduleConfig.econ
     private val decimalFormat = econConf.decimalFormat()
 
-    fun transferFunds(recipient: EconEntity) {
-        val commandSender = getEssxUser(event) ?: run {
-            event.replyEphemeral("Unable to find user, please ensure your account is linked!").queue()
-            return
-        }
-
-        takeUnless { sender.uuid == recipient.uuid } ?: run {
+    /**
+     * Moves the command's "amount" from [sender] to [recipient] as a single atomic
+     * Treasury transfer, initiated by [actor] (the acting player).
+     */
+    fun transferFunds(recipient: EconEntity, actor: UUID) {
+        takeUnless { sender.accountId == recipient.accountId } ?: run {
             PPEconomyTransactionResult.SENT_TO_SELF.emitError(event)
             return
         }
-
-        takeIf { recipient.acceptingPayment.emitError(event).isSuccess() } ?: return
 
         val amount = checkAmountOption() ?: run {
             PPEconomyTransactionResult.UNDER_MINIMUM.emitError(event)
             return
         }
 
-        takeIf { sender.hasEnough(amount).emitError(event).isSuccess() } ?: return
-        when (val payment = sender.pay(UserEntity(commandSender), recipient, amount)) {
-            PPEconomyTransactionResult.PLUGIN_WITHDRAW -> {
-                payment.emitError(event, sender.name)
-                return
-            }
+        takeIf { sender.balance >= amount } ?: run {
+            PPEconomyTransactionResult.INSUFFICIENT_FUNDS.emitError(event)
+            return
+        }
 
-            PPEconomyTransactionResult.PLUGIN_DEPOSIT -> {
-                payment.emitError(event, sender.name)
-                takeIf { sender.deposit(amount).isSuccess() } ?: run {
-                    plugin.logger.info("Failed to revert transaction. ${sender.name} may be owed $amount")
-                    PPEconomyTransactionResult.PLUGIN_REVERT_FAIL.emitError(event)
-                }
-                return
-            }
+        val request = TransferRequest(
+            sender.accountId,
+            recipient.accountId,
+            BigDecimal.valueOf(amount),
+            "${sender.name} -> ${recipient.name}",
+            actor,
+            null,
+            "PostmanPat",
+            null,
+        )
 
-            else -> {}
+        try {
+            plugin.treasury.transfer(request)
+        } catch (ex: RuntimeException) {
+            plugin.logger.warning("Transfer from ${sender.name} to ${recipient.name} failed: ${ex.message}")
+            PPEconomyTransactionResult.TRANSFER_FAILED.emitError(event)
+            return
         }
 
         event.replyEmbeds(
@@ -66,9 +68,3 @@ class PostmanEconManager(private val sender: EconEntity, private val event: Slas
         return event.getOption("amount")?.asDouble?.takeIf { isAtleastMinimum(it) }
     }
 }
-
-
-
-
-
-

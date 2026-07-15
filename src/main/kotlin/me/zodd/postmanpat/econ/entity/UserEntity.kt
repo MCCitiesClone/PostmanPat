@@ -1,42 +1,17 @@
 package me.zodd.postmanpat.econ.entity
 
-import com.earth2me.essentials.User
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
-import me.zodd.postmanpat.econ.PPEconomyTransactionResult
-import org.bukkit.OfflinePlayer
 import java.util.UUID
 
-class UserEntity(user: User) : EconEntity {
+/**
+ * A player, backed by their personal Treasury account.
+ */
+class UserEntity(val uuid: UUID, override val name: String) : EconEntity {
 
-    override val uuid: UUID = user.uuid
-
-    override val name: String = user.name
-
-    private val offlinePlayer: OfflinePlayer
-        get() = plugin.server.getOfflinePlayer(uuid)
+    override val accountId: Int by lazy {
+        plugin.treasury.resolveOrCreatePersonal(uuid).accountId
+    }
 
     override val balance: Double
-        get() = plugin.econ.getBalance(offlinePlayer)
-
-    override val acceptingPayment: PPEconomyTransactionResult =
-        if (user.isAcceptingPay) PPEconomyTransactionResult.SUCCESS else PPEconomyTransactionResult.NOT_ACCEPTING_PAY
-
-    override fun deposit(amount: Double): PPEconomyTransactionResult {
-        takeIf { plugin.econ.depositPlayer(offlinePlayer, amount).transactionSuccess() }
-            ?: return PPEconomyTransactionResult.PLUGIN_DEPOSIT
-        return PPEconomyTransactionResult.SUCCESS
-    }
-
-    override fun withdraw(amount: Double): PPEconomyTransactionResult {
-        takeIf { plugin.econ.withdrawPlayer(offlinePlayer, amount).transactionSuccess() }
-            ?: return PPEconomyTransactionResult.PLUGIN_WITHDRAW
-        return PPEconomyTransactionResult.SUCCESS
-    }
-
-    override fun pay(sender: UserEntity, receiver: EconEntity, amount: Double): PPEconomyTransactionResult {
-        val res = withdraw(amount)
-        takeIf { res.isSuccess() } ?: return res // Return error
-        return receiver.deposit(amount)
-    }
+        get() = plugin.treasury.getBalanceByAccountId(accountId).toDouble()
 }
-

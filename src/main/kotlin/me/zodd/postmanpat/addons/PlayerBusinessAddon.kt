@@ -1,39 +1,36 @@
 package me.zodd.postmanpat.addons
 
-import com.earth2me.essentials.User
-import com.olziedev.playerbusinesses.api.PlayerBusinessesAPI
-import com.olziedev.playerbusinesses.api.business.BStaff
-import com.olziedev.playerbusinesses.api.business.Business
-import com.olziedev.playerbusinesses.api.business.BusinessPermission
 import github.scarsz.discordsrv.dependencies.jda.api.EmbedBuilder
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
+import io.paradaux.business.api.BusinessApi
+import io.paradaux.business.model.Firm
+import io.paradaux.business.model.RolePermission
 import me.zodd.postmanpat.PostmanPat
+import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.MessageUtils.embedMessage
-import me.zodd.postmanpat.Utils.SlashCommandUtils.get
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeral
 import me.zodd.postmanpat.Utils.MessageUtils.replyEphemeralEmbed
+import me.zodd.postmanpat.Utils.SlashCommandUtils.get
 import me.zodd.postmanpat.Utils.SlashCommandUtils.userOrPlayerArg
 import me.zodd.postmanpat.econ.PostmanEconManager
 import me.zodd.postmanpat.econ.entity.BusinessEntity
 import me.zodd.postmanpat.econ.entity.UserEntity
 import java.awt.Color
+import java.util.UUID
 
 class PlayerBusinessAddon {
 
-    private val pba: PlayerBusinessesAPI by lazy {
-        PlayerBusinessesAPI.getInstance()
-    }
+    // Only constructed once PostmanPat.business is known to be present (see EconSlashCommands).
+    private val business: BusinessApi = plugin.business
+        ?: error("PlayerBusinessAddon constructed while the Business plugin is unavailable")
 
-    private val econConf = PostmanPat.plugin.configManager.conf.moduleConfig.econ
-    private val decimalFormat = econConf.decimalFormat()
-
-    internal fun listOwnedBusinesses(event: SlashCommandEvent, sender: User) {
+    internal fun listOwnedBusinesses(event: SlashCommandEvent, senderUuid: UUID) {
         val embedBuilder = EmbedBuilder()
-            .setTitle("Owned Businesses")
+            .setTitle("Your Businesses")
             .setColor(Color.blue)
             .setFooter(PostmanPat.plugin.configManager.conf.serverBranding)
-        pba.getBusinessesByPlayer(sender.uuid).map { it.name }.map {
-            embedBuilder.addField(it, "", true)
+        business.firms().getPlayerFirms(senderUuid).forEach {
+            embedBuilder.addField(it.displayName, "", true)
         }
 
         event.replyEphemeralEmbed(
@@ -41,56 +38,62 @@ class PlayerBusinessAddon {
         ).queue()
     }
 
-    internal fun firmBal(event: SlashCommandEvent, sender: User) {
+    internal fun firmBal(event: SlashCommandEvent, senderUuid: UUID) {
         val businessName = event["business"]?.asString
-        val business: Business = pba.getBusinessByName(businessName?.lowercase()) ?: run {
+        val firm: Firm = firmByName(businessName) ?: run {
             event.replyEphemeral("Business by name [$businessName] was not found!").queue()
             return
         }
         event.replyEphemeralEmbed(
             embedMessage(
-                "Balance for ${business.name}",
-                "${econConf.currencySymbol}${decimalFormat.format(business.balance)}"
+                "Balance for ${firm.displayName}",
+                business.firms().getFormattedTotalBalance(firm.firmId)
             )
         ).queue()
     }
 
-
-    internal fun firmPay(event: SlashCommandEvent, sender: User) {
-
+    internal fun firmPay(event: SlashCommandEvent, senderUuid: UUID) {
         val businessName = event["business"]?.asString
 
-        val targetUser = event.userOrPlayerArg() ?: run {
+        val target = event.userOrPlayerArg() ?: run {
             event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
             return
         }
 
-        val business: Business = pba.getBusinessByName(businessName?.lowercase()) ?: run {
+        val firm: Firm = firmByName(businessName) ?: run {
             event.replyEphemeral("Business by name [$businessName] was not found!").queue()
             return
         }
 
-        sender.hasFirmPermission(event, business) ?: return
-
-        val businessSender = BusinessEntity(business)
-        val receiver = UserEntity(targetUser)
-        PostmanEconManager(businessSender, event).transferFunds(receiver)
-    }
-
-    private fun User.hasFirmPermission(event: SlashCommandEvent, business: Business): BStaff? {
-        return business.staff?.firstOrNull {
-            val permCheck = it.role.permission
-            it.uuid == uuid && (permCheck.contains(BusinessPermission.FINANCIAL)
-                    || permCheck.contains(BusinessPermission.PROPRIETOR)
-                    || permCheck.contains(BusinessPermission.ADMINISTRATOR))
-        } ?: run {
-            event.replyEphemeral("You do not have permission to view or transfer funds from this business")
-                .queue()
-            null
+        if (!firm.hasFinancialAccess(senderUuid)) {
+            event.replyEphemeral("You do not have permission to view or transfer funds from this business").queue()
+            return
         }
+
+        if (firm.defaultAccountId == null) {
+            event.replyEphemeral("${firm.displayName} has no account to pay from!").queue()
+            return
+        }
+
+        val businessSender = BusinessEntity(firm)
+        val receiver = UserEntity(target.uuid, target.name)
+        PostmanEconManager(businessSender, event).transferFunds(receiver, senderUuid)
     }
 
-    internal fun businessByName(name: String): Business? {
-        return pba.getBusinessByName(name.lowercase())
+    /**
+     * Whether [playerId] may move money out of this firm: its proprietor, or an
+     * employee with the FINANCIAL or ADMIN permission. Defensive against the
+     * BusinessApi throwing for non-employees.
+     */
+    private fun Firm.hasFinancialAccess(playerId: UUID): Boolean = try {
+        business.firms().isProprietor(firmId, playerId)
+            || business.staff().hasPermission(firmId, playerId, RolePermission.FINANCIAL)
+            || business.staff().hasPermission(firmId, playerId, RolePermission.ADMIN)
+    } catch (ex: RuntimeException) {
+        false
+    }
+
+    internal fun firmByName(name: String?): Firm? {
+        return name?.let { business.firms().getFirmByName(it) }
     }
 }

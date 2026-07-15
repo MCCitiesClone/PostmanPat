@@ -20,8 +20,9 @@ import me.zodd.postmanpat.mail.MailUserStorage
 import me.zodd.postmanpat.realty.RealtySlashCommands
 import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.*
 import me.zodd.postmanpat.playtime.PlaytimeSlashCommands.PlaytimeCommands.*
+import io.paradaux.business.api.BusinessApi
+import io.paradaux.treasury.api.TreasuryApi
 import net.essentialsx.api.v2.events.UserMailEvent
-import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
 import org.bukkit.event.Event
 import org.bukkit.event.EventPriority
@@ -39,11 +40,17 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
     val configManager by lazy { ConfigManager(plugin, "postmanpatConfig", PostmanPatConfig::class) }
     val userStorageManager by lazy { ConfigManager(plugin, "userStorage", MailUserStorage::class) }
 
-    val econ: Economy by lazy {
-        loadEcon() ?: run {
+    val treasury: TreasuryApi by lazy {
+        loadTreasury() ?: run {
             server.pluginManager.disablePlugin(this)
-            throw Error("Failed to load economy! This plugin requires Vault!")
+            throw Error("Failed to load economy! This plugin requires Treasury!")
         }
+    }
+
+    /** Business API, present only when the optional Business plugin is installed. */
+    val business: BusinessApi? by lazy {
+        takeIf { server.pluginManager.isPluginEnabled("Business") }
+            ?.let { server.servicesManager.getRegistration(BusinessApi::class.java)?.provider }
     }
 
     val jda: JDA
@@ -75,9 +82,8 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
         )
     }
 
-    private fun loadEcon(): Economy? {
-        server.pluginManager.getPlugin("Vault") ?: return null
-        return server.servicesManager.getRegistration(Economy::class.java)?.provider ?: return null
+    private fun loadTreasury(): TreasuryApi? {
+        return server.servicesManager.getRegistration(TreasuryApi::class.java)?.provider
     }
 
     @SlashCommand(path = "*")
@@ -110,7 +116,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
-            // Player Businesses Commands
+            // Business (firm) commands
             ECON_FIRM_BASE.command -> when (event.subcommandName) {
                 ECON_FIRM_PAY.command -> ECON_FIRM_PAY
                 ECON_FIRM_LIST.command -> ECON_FIRM_LIST

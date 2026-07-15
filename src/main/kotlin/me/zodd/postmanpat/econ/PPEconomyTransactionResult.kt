@@ -8,20 +8,14 @@ enum class PPEconomyTransactionResult(private val msg: String) {
     INSUFFICIENT_FUNDS("You are too poor for this transaction!"),
     UNDER_MINIMUM("Amount must be more than ${plugin.configManager.conf.moduleConfig.econ.minimumSendable}!"),
     SENT_TO_SELF("You cannot send money to yourself!"),
-    PLUGIN_WITHDRAW("Failed to withdraw money from {}."),
-    PLUGIN_DEPOSIT("Failed to deposit money to {}, transaction reverted."),
-    PLUGIN_REVERT_FAIL("Failed to revert transaction. Please contact an admin."),
-    NOT_ACCEPTING_PAY("Target user is not accepting payments at this time!"),
+    TRANSFER_FAILED("The transaction could not be completed. Please try again later."),
     SUCCESS("Success"); // Message won't be sent
 
-    fun isSuccess() = when (this) {
-        SUCCESS -> true
-        else -> false
-    }
+    fun isSuccess() = this == SUCCESS
 
-    fun emitError(event: SlashCommandEvent, arg: String? = null): PPEconomyTransactionResult {
+    fun emitError(event: SlashCommandEvent): PPEconomyTransactionResult {
         if (!isSuccess())
-            event.replyEphemeral(msg.replace("{}", "$arg")).queue()
+            event.replyEphemeral(msg).queue()
         return this
     }
 }

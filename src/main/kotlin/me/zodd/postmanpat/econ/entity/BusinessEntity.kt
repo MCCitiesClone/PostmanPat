@@ -1,36 +1,20 @@
 package me.zodd.postmanpat.econ.entity
 
-import com.olziedev.playerbusinesses.api.business.Business
-import me.zodd.postmanpat.econ.PPEconomyTransactionResult
-import java.time.Instant
-import java.util.UUID
+import io.paradaux.business.model.Firm
+import me.zodd.postmanpat.PostmanPat.Companion.plugin
 
-class BusinessEntity(private val business: Business) : EconEntity {
+/**
+ * A firm, backed by its default Treasury account.
+ *
+ * The firm must have a [Firm.getDefaultAccountId]; callers are expected to guard
+ * against a null default account before constructing this.
+ */
+class BusinessEntity(firm: Firm) : EconEntity {
 
-    override val uuid: UUID = business.uuid
+    override val name: String = firm.displayName
 
-    override val name: String = business.name
-
-    override val acceptingPayment: PPEconomyTransactionResult = PPEconomyTransactionResult.SUCCESS
+    override val accountId: Int = firm.defaultAccountId
 
     override val balance: Double
-        get() = business.balance
-
-    override fun deposit(amount: Double): PPEconomyTransactionResult {
-        // I have no way of knowing if this worked or not, so it always does!
-        business.balance += amount
-        return PPEconomyTransactionResult.SUCCESS
-    }
-
-    override fun pay(sender: UserEntity, receiver: EconEntity, amount: Double): PPEconomyTransactionResult {
-        this.withdraw(amount)
-        business.transactions.addPaidEntry(sender.uuid, receiver.uuid, amount, Instant.now().toEpochMilli())
-        return receiver.deposit(amount)
-    }
-
-    override fun withdraw(amount: Double): PPEconomyTransactionResult {
-        // I have no way of knowing if this worked or not, so it always does!
-        business.balance -= amount
-        return PPEconomyTransactionResult.SUCCESS
-    }
+        get() = plugin.treasury.getBalanceByAccountId(accountId).toDouble()
 }

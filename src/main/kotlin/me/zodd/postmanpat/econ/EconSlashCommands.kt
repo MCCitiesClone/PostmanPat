@@ -34,7 +34,7 @@ class EconSlashCommands : PostmanCommandProvider {
 
         companion object {
             internal val pba: PlayerBusinessAddon? by lazy {
-                return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("democracybusiness") }?.let { PlayerBusinessAddon() }
+                return@lazy plugin.business?.let { PlayerBusinessAddon() }
             }
         }
 
@@ -42,21 +42,14 @@ class EconSlashCommands : PostmanCommandProvider {
             when (this) {
                 ECON_PAY -> this::payUserCommand
                 ECON_BALANCE -> this::balanceUserCommand
-                ECON_FIRM_PAY -> {
-                    pba?.let {
-                        it::firmPay
-                    } ?: emptyCommand()
-                }
+                ECON_FIRM_PAY ->
+                    pba?.let { { e: SlashCommandEvent, s: User -> it.firmPay(e, s.uuid) } } ?: emptyCommand()
 
-                ECON_FIRM_LIST -> {
-                    pba?.let { it::listOwnedBusinesses } ?: emptyCommand()
-                }
+                ECON_FIRM_LIST ->
+                    pba?.let { { e: SlashCommandEvent, s: User -> it.listOwnedBusinesses(e, s.uuid) } } ?: emptyCommand()
 
-                ECON_FIRM_BALANCE -> {
-                    pba?.let {
-                        it::firmBal
-                    } ?: emptyCommand()
-                }
+                ECON_FIRM_BALANCE ->
+                    pba?.let { { e: SlashCommandEvent, s: User -> it.firmBal(e, s.uuid) } } ?: emptyCommand()
 
                 ECON_FIRM_BASE -> emptyCommand()
 
@@ -68,23 +61,23 @@ class EconSlashCommands : PostmanCommandProvider {
         private val decimalFormat = econConfig.decimalFormat()
 
         private fun payUserCommand(event: SlashCommandEvent, sender: User) {
-            val senderEntity = sender.let(::UserEntity)
+            val senderEntity = UserEntity(sender.uuid, sender.name)
             val targetEntity: EconEntity = pba?.let { api ->
-                event["business"]?.let { option ->
-                    api.businessByName(option.asString)?.let(::BusinessEntity)
+                event["business"]?.asString?.let { name ->
+                    api.firmByName(name)?.takeIf { it.defaultAccountId != null }?.let(::BusinessEntity)
                 }
-            } ?: event.userOrPlayerArg()?.let(::UserEntity) ?: run {
+            } ?: event.userOrPlayerArg()?.let { UserEntity(it.uuid, it.name) } ?: run {
                 event.replyEphemeral("Unable to find user! Ensure name is spelled correctly or try @tagging them").queue()
                 return
             }
 
-            PostmanEconManager(senderEntity, event).transferFunds(targetEntity)
+            PostmanEconManager(senderEntity, event).transferFunds(targetEntity, sender.uuid)
         }
 
         private fun balanceUserCommand(event: SlashCommandEvent, sender: User) {
             val targetUser = event.userOrPlayerArg() ?: sender
 
-            val target = UserEntity(targetUser)
+            val target = UserEntity(targetUser.uuid, targetUser.name)
 
             event.replyEphemeralEmbed(
                 embedMessage(
@@ -97,7 +90,7 @@ class EconSlashCommands : PostmanCommandProvider {
 
     override fun slashCommands(): List<PluginSlashCommand> {
 
-        // This is offered an optional argument from PlayerBusinesses
+        // This is offered an optional argument from the Business plugin
         val payCommand = CommandData(EconCommands.ECON_PAY.command, "Pay's the target user a specified amount").apply {
             addOption(OptionType.NUMBER, "amount", "amount to pay user", true)
             addOption(OptionType.USER, "user", "user to pay by @tag", false)
@@ -113,7 +106,7 @@ class EconSlashCommands : PostmanCommandProvider {
                 }
             )
         )
-        // Add command if PlayerBusinesses is enabled
+        // Add command if the Business plugin is enabled
         pba?.let {
             commands.add(
                 PluginSlashCommand(

@@ -12,10 +12,10 @@ dependencies:
     DiscordSRV:
         load: BEFORE
         required: true
-    Vault:
+    Treasury:
         load: BEFORE
         required: true
-    DemocracyBusiness:
+    Business:
         load : BEFORE
         required: false
     Realty:
