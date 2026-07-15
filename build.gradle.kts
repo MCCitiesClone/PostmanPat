@@ -6,6 +6,9 @@ plugins {
 group = "me.zodd"
 version = "2.3.4"
 
+// Realty API version (JitPack tag on MCCitiesClone/realty).
+val realtyVersion = "v1.4.4"
+
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
@@ -37,11 +40,12 @@ dependencies {
     compileOnly("com.olziedev:playerbusinesses-api:1.5.1") {
         isTransitive = false
     }
-    compileOnly("com.github.md5sha256.AreaShop:areashop:-SNAPSHOT") {
-        exclude("io.papermc")
-        exclude("io.github.baked-libs")
-        exclude("com.google.inject")
-        exclude("org.spigotmc")
+    // Realty (MCCitiesClone/realty) — resolved via JitPack. Bump the tag above when a
+    // newer release changes the RealtyPaperApi surface used by RealtyAddon.
+    compileOnly("com.github.MCCitiesClone.realty:realty-paper-api:$realtyVersion") {
+        // Platform APIs are provided at runtime by the server; exclude Realty's copies
+        // to avoid strict gson/fastutil version conflicts with paper-api.
+        exclude("io.papermc.paper")
         exclude("com.sk89q.worldguard")
         exclude("com.sk89q.worldedit")
     }
@@ -67,5 +71,14 @@ tasks.compileJava {
 
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible) {
         options.release.set(targetJavaVersion)
+    }
+}
+
+tasks.processResources {
+    val props = mapOf("version" to version)
+    inputs.properties(props)
+    filteringCharset = "UTF-8"
+    filesMatching("paper-plugin.yml") {
+        expand(props)
     }
 }

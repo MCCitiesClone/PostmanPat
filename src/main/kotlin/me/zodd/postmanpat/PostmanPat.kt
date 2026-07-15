@@ -118,7 +118,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
                 else -> null
             }
 
-            // Areashop commands
+            // Realty commands
             REALTY_BASE.command -> when (event.subcommandName) {
                 LANDLORD_TRANSFER.command -> LANDLORD_TRANSFER
                 OWNER_TRANSFER.command -> OWNER_TRANSFER

@@ -1,5 +1,5 @@
 name: PostmanPat
-version: '2.0.0'
+version: '${version}'
 main: me.zodd.postmanpat.PostmanPat
 description: Postman
 api-version: '1.21.1'
@@ -18,7 +18,7 @@ dependencies:
     DemocracyBusiness:
         load : BEFORE
         required: false
-    AreaShop:
+    Realty:
         load: BEFORE
         required: false
     LiteBans:
