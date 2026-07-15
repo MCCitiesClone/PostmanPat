@@ -2,10 +2,45 @@
 
 ## Dependencies
 
-This project has 3 dependencies for the features it provides
-* Vault - [1.7]
-* EssentialsX - [2.20.1]
-* DiscordSRV - [1.28.1]
+All dependencies are `compileOnly` — they are provided at runtime by the
+corresponding server plugins, not shaded into PostmanPat.
+
+### Required plugins
+
+These must be present for PostmanPat to enable (`required: true` in
+`paper-plugin.yml`):
+
+| Plugin     | Compiled against | Purpose                                             |
+|------------|------------------|-----------------------------------------------------|
+| DiscordSRV | 1.29.0           | Bot instance + slash-command API; Discord↔MC linking |
+| EssentialsX| 2.21.0           | Player identity / account resolution and mail        |
+| Treasury   | `v2.3.379`¹      | Economy backend — all balances and transfers         |
+
+### Optional plugins
+
+Features that use these are only registered when the plugin is installed
+(`required: false`):
+
+| Plugin        | Compiled against | Enables                                          |
+|---------------|------------------|--------------------------------------------------|
+| Business      | `v2.3.379`¹      | `/firm` commands (firm balance, pay, list)       |
+| Realty        | `v1.4.4`²        | Realty commands (plot transfer/info)             |
+| WorldGuard    | 7.0.14           | Region handling used by the Realty integration   |
+| LiteBans      | 0.6.1            | Deport/ban checks before running commands        |
+| PlaceholderAPI| 2.11.6           | Placeholder expansion                            |
+
+¹ Hibernia Economy — the `business-api` and `treasury-api` surfaces are
+resolved from JitPack (`com.github.MCCitiesClone.hibernia-economy:*`). The tag
+is set by `hiberniaEconomyVersion` in `build.gradle.kts`.
+
+² Realty — `realty-paper-api`, resolved from JitPack
+(`com.github.MCCitiesClone.realty:realty-paper-api`); tag set by `realtyVersion`.
+
+### Build-time libraries
+
+Pulled from Maven and loaded at runtime by `ExternalDependencyLoader`: the
+Kotlin stdlib, Configurate (hocon + extra-kotlin, 4.1.2), and kotlinx-coroutines.
+Targets Paper 1.21.4 (Java 21).
 
 ## Features
 
@@ -22,12 +57,20 @@ Mail Commands
 * `/mail mark-read`
 * `/mail ignore [user] [uuid]`
 
-Econ Commands
-* `/bal [user]`
-* `/pay <user> <amount>`
+Econ Commands (default names; several are configurable)
+* `/balance [user]`
+* `/pay <user> <amount> [business]`
 
-Considerations have been made for negative values, zero values, insufficient balances,
-and respects Essentials `/togglepay` feature.
+Firm Commands (require the Business plugin)
+* `/firm balance <business>`
+* `/firm pay <business> <amount> <user>`
+* `/firm list`
+
+All economy operations go directly through Treasury: `/pay` and `/firm pay`
+are performed as single atomic Treasury transfers, and balances are read from
+Treasury accounts (personal accounts for players, the firm's default account
+for businesses). Considerations have been made for negative values, zero
+values, and insufficient balances.
 
 ### Config
 
