@@ -26,7 +26,7 @@ Features that use these are only registered when the plugin is installed
 | Business      | `v2.3.379`¹      | `/firm` commands (firm balance, pay, list)       |
 | Realty        | `v1.4.4`²        | Realty commands (plot transfer/info)             |
 | WorldGuard    | 7.0.14           | Region handling used by the Realty integration   |
-| LiteBans      | 0.6.1            | Deport/ban checks before running commands        |
+| LibertyBans   | 1.1.4            | Deport/ban/mute checks before running commands   |
 | PlaceholderAPI| 2.11.6           | Placeholder expansion                            |
 
 ¹ Hibernia Economy — the `business-api` and `treasury-api` surfaces are

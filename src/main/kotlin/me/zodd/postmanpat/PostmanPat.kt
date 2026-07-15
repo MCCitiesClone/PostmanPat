@@ -8,7 +8,7 @@ import github.scarsz.discordsrv.api.commands.SlashCommandProvider
 import github.scarsz.discordsrv.dependencies.jda.api.JDA
 import github.scarsz.discordsrv.dependencies.jda.api.events.interaction.SlashCommandEvent
 import github.scarsz.discordsrv.util.DiscordUtil
-import me.zodd.postmanpat.addons.LitebansAddon
+import me.zodd.postmanpat.addons.LibertyBansAddon
 import me.zodd.postmanpat.config.ConfigManager
 import me.zodd.postmanpat.config.PostmanPatConfig
 import me.zodd.postmanpat.econ.EconSlashCommands
@@ -56,8 +56,8 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
     val jda: JDA
         get() = DiscordUtil.getJda()
 
-    val litebans: LitebansAddon? by lazy {
-        return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LiteBans") }?.let { LitebansAddon() }
+    val libertyBans: LibertyBansAddon? by lazy {
+        return@lazy takeIf { plugin.server.pluginManager.isPluginEnabled("LibertyBans") }?.let { LibertyBansAddon() }
     }
 
     val papi: PapiAddon? by lazy {
@@ -91,7 +91,7 @@ class PostmanPat : JavaPlugin(), SlashCommandProvider {
 
         // Pre-check for banned users and ensure runner is a synced user.
         val user = EssxUtils.getEssxUser(event)?.let { user ->
-            if (litebans?.isLBBanned(user) == true || litebans?.isDeported(user) == true) {
+            if (libertyBans?.isBanned(user) == true || libertyBans?.isDeported(user) == true) {
                 event.replyEphemeral("You have been deported from the server and cannot use commands.").queue()
                 return
             }

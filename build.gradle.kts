@@ -25,6 +25,9 @@ repositories {
     maven(url = "https://jitpack.io")
     maven(url = "https://maven.enginehub.org/repo/")
     maven(url = "https://repo.extendedclip.com/releases/")
+    // LibertyBans: bans-api lives in affero-gpl3; its parent POM + omnibus in lesser-gpl3.
+    maven(url = "https://mvn-repo.arim.space/affero-gpl3/")
+    maven(url = "https://mvn-repo.arim.space/lesser-gpl3/")
 }
 
 dependencies {
@@ -57,7 +60,9 @@ dependencies {
         exclude("com.sk89q.worldedit")
     }
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.14")
-    compileOnly("com.gitlab.ruany:LiteBansAPI:0.6.1")
+    // LibertyBans API — pulls omnibus (OmnibusProvider/ReactionStage) transitively for compile.
+    // Provided at runtime by the LibertyBans plugin.
+    compileOnly("space.arim.libertybans:bans-api:1.1.4")
     compileOnly("me.clip:placeholderapi:2.11.6")
 }
 

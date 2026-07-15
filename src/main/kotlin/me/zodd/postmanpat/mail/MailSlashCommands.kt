@@ -76,7 +76,7 @@ class MailSlashCommands : PostmanCommandProvider {
         }
 
         private fun markAsReadCommand(event: SlashCommandEvent, sender: User) {
-            if (plugin.litebans?.isLBMuted(sender) == true) {
+            if (plugin.libertyBans?.isMuted(sender) == true) {
                 event.replyEphemeral("You have been muted from the server and cannot send mail at this time.").queue()
                 return
             }

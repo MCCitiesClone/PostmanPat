@@ -21,7 +21,7 @@ dependencies:
     Realty:
         load: BEFORE
         required: false
-    LiteBans:
+    LibertyBans:
       load: BEFORE
       required: false
     PlaceholderAPI:
