@@ -5,7 +5,7 @@ import org.spongepowered.configurate.objectmapping.meta.Comment
 
 @ConfigSerializable
 data class RealtyConfig(
-    @field:Comment("Whether the realty module is enabled, requires Areashop plugin")
+    @field:Comment("Whether the realty module is enabled, requires the Realty plugin")
     val enabled: Boolean = false,
     @field:Comment("Landlord Transfer command")
     val landlordTransferCommand: String = "transfer-landlord",

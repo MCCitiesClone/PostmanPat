@@ -8,10 +8,10 @@ import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build
 import github.scarsz.discordsrv.dependencies.jda.api.interactions.commands.build.SubcommandData
 import me.zodd.postmanpat.PostmanPat.Companion.plugin
 import me.zodd.postmanpat.Utils.SlashCommandUtils.emptyCommand
-import me.zodd.postmanpat.addons.AreashopAddon
+import me.zodd.postmanpat.addons.RealtyAddon
 import me.zodd.postmanpat.command.PPSlashCommand
 import me.zodd.postmanpat.command.PostmanCommandProvider
-import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.Companion.areashop
+import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.Companion.realty
 import me.zodd.postmanpat.realty.RealtySlashCommands.RealtyCommands.LANDLORD_TRANSFER
 
 class RealtySlashCommands : PostmanCommandProvider {
@@ -24,29 +24,29 @@ class RealtySlashCommands : PostmanCommandProvider {
         ;
 
         companion object {
-            internal val areashop: AreashopAddon? by lazy {
+            internal val realty: RealtyAddon? by lazy {
                 return@lazy takeIf {
-                    plugin.server.pluginManager.isPluginEnabled("areashop") && plugin.configManager.conf.moduleConfig.realty.enabled
-                }?.let { AreashopAddon() }
+                    plugin.server.pluginManager.isPluginEnabled("Realty") && plugin.configManager.conf.moduleConfig.realty.enabled
+                }?.let { RealtyAddon() }
             }
         }
 
         override fun exec(event: SlashCommandEvent, sender: User) {
             when (this) {
                 LANDLORD_TRANSFER -> {
-                    areashop?.let {
+                    realty?.let {
                         it::landlordTransfer
                     } ?: emptyCommand()
                 }
 
                 OWNER_TRANSFER -> {
-                    areashop?.let {
+                    realty?.let {
                         it::ownerTransfer
                     } ?: emptyCommand()
                 }
 
                 PLOT_INFO -> {
-                    areashop?.let {
+                    realty?.let {
                         it::areaInfo
                     } ?: emptyCommand()
                 }
@@ -59,7 +59,7 @@ class RealtySlashCommands : PostmanCommandProvider {
 
     override fun slashCommands(): List<PluginSlashCommand> {
 
-        return areashop?.let {
+        return realty?.let {
             listOf(
                 PluginSlashCommand(
                     plugin,
