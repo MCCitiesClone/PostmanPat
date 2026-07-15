@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "me.zodd"
-version = "2.3.5"
+version = "2.3.6"
 
 // Realty API version (JitPack tag on MCCitiesClone/realty).
 val realtyVersion = "v1.4.4"
